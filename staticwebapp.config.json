@@ -1,0 +1,15 @@
+{
+  "$schema": "https://aka.ms/azure/static-web-apps-cli/schema",
+  "configurations": {
+    "CRMTranslationMerger": {
+      "appLocation": "CRMTranslationMerger.Client",
+      "apiLocation": "CRMTranslationMerger.Server",
+      "outputLocation": "wwwroot",
+      "appBuildCommand": "dotnet publish -c Release -o published",
+      "apiBuildCommand": "dotnet publish -c Release -o published"
+    }
+  },
+  "navigationFallback": {
+    "rewrite": "/index.html"
+  }
+}
