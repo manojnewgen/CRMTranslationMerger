@@ -4,50 +4,137 @@
 @inject HttpClient Http
 @inject IJSRuntime JS
 
-<PageTitle>CRM Translation Merger - Real Structure</PageTitle>
+<PageTitle>CRM Translation Merger</PageTitle>
 
 <div class="container">
-    <h1>🌍 CRM Translation Merger</h1>
-    <p>Merge Excel translations into CRM JSON (contentDoc.content.localizedContents structure)</p>
+    <div class="header-section">
+        <h1>🌍 CRM Translation Merger</h1>
+        <p class="subtitle">Automatically merge Excel translations into CRM JSON with Handlebars conversion</p>
+    </div>
 
-    <!-- Workflow Instructions -->
-    <div class="workflow-instructions">
-        <h3>📋 How to Use:</h3>
-        <ol>
-            <li>
-                <strong>Copy data from Google Sheets</strong> to a local Excel file
-                <span class="tooltip-icon" title="Select all translation data in Google Sheets (Ctrl+A), copy (Ctrl+C), then paste into Excel">ℹ️</span>
-            </li>
-            <li>
-                <strong>Download/Extract Content Docstore template</strong> (CRM JSON file)
-                <span class="tooltip-icon" title="Get the existing CRM JSON template that contains the contentDoc structure with localizedContents">ℹ️</span>
-            </li>
-            <li>
-                <strong>Look for keys in the template</strong> like:
-                <code style="display: block; padding: 5px; background: #f5f5f5; margin: 5px 0; font-size: 12px;">
-                    "oneWordTransforYourDay", "YouMightRemember", "messageReceived", "replyNow", "subject", "years"
-                </code>
-                <span class="tooltip-icon" title="These are the translation keys used in your CRM email templates. Find them in contentDoc.content.localizedContents">ℹ️</span>
-            </li>
-            <li>
-                <strong>Replace Excel's first column</strong> with keys from the downloaded template
-                <span class="tooltip-icon" title="Match your Excel translation keys exactly with the keys in the CRM template (case-sensitive!)">ℹ️</span>
-            </li>
-            <li>
-                <strong>Save both files</strong> and upload them below
-                <span class="tooltip-icon" title="Save your Excel file with updated keys, then upload both the CRM JSON template and Excel file">ℹ️</span>
-            </li>
-        </ol>
+    <!-- Comprehensive Instructions -->
+    <div class="instructions-panel">
+        <div class="instructions-header">
+            <h2>� Complete Guide</h2>
+            <p>Follow these steps to merge your translations</p>
+        </div>
+
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3>📥 Export from Google Sheets</h3>
+                    <ul>
+                        <li>Open your Google Sheets translation document</li>
+                        <li>Select all cells (Ctrl+A / Cmd+A)</li>
+                        <li>Copy (Ctrl+C / Cmd+C)</li>
+                        <li>Open Excel and paste (Ctrl+V / Cmd+V)</li>
+                        <li>Save as .xlsx file</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3>📄 Get CRM Template</h3>
+                    <ul>
+                        <li>Download the Content Docstore JSON template from your CRM</li>
+                        <li>This file contains the structure: <code>contentDoc.content.localizedContents</code></li>
+                        <li>Keep this file - you'll upload it in step 5</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3>🔍 Find Translation Keys</h3>
+                    <ul>
+                        <li>Open the CRM JSON template</li>
+                        <li>Look inside <code>localizedContents</code> → <code>en</code> (or first language)</li>
+                        <li>Copy the key names, for example:</li>
+                    </ul>
+                    <div class="code-example">
+                        "subject"<br/>
+                        "messageReceived"<br/>
+                        "replyNow"<br/>
+                        "years"
+                    </div>
+                </div>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h3>✏️ Update Excel Keys</h3>
+                    <ul>
+                        <li>Open your Excel file from step 1</li>
+                        <li>In the <strong>first column</strong>, replace your keys with the exact keys from the template</li>
+                        <li>⚠️ Keys are <strong>case-sensitive</strong>: "Subject" ≠ "subject"</li>
+                        <li>Save the file</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">5</div>
+                <div class="step-content">
+                    <h3>📤 Upload Files</h3>
+                    <ul>
+                        <li>Upload the <strong>CRM JSON template</strong> (from step 2)</li>
+                        <li>Upload the <strong>Excel file</strong> (from step 4)</li>
+                        <li>Enable AI conversion to convert placeholders like:<br/>
+                            <code>[Sender name]</code> → <code>{{"{{"}}LoadedData.SenderProfile.Handle}}</code>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">6</div>
+                <div class="step-content">
+                    <h3>🚀 Merge & Download</h3>
+                    <ul>
+                        <li>Click "Merge Translations"</li>
+                        <li>Review the statistics</li>
+                        <li>Download the merged JSON file</li>
+                        <li>Upload to your CRM system</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="tips-section">
+            <h3>💡 Pro Tips</h3>
+            <div class="tips-grid">
+                <div class="tip-item">
+                    <span class="tip-icon">📊</span>
+                    <div>
+                        <strong>Excel Format:</strong> Supports both matrix format (languages as columns) and standard format (LanguageCode, Key, Value columns)
+                    </div>
+                </div>
+                <div class="tip-item">
+                    <span class="tip-icon">🔧</span>
+                    <div>
+                        <strong>Auto-Repair:</strong> The tool automatically fixes common issues like missing closing brackets in placeholders
+                    </div>
+                </div>
+                <div class="tip-item">
+                    <span class="tip-icon">🎯</span>
+                    <div>
+                        <strong>Pattern Matching:</strong> The tool detects whether to use String.Append or String.Concat from your reference language (usually English)
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="upload-section">
         <h2>1️⃣ Upload Files</h2>
         <div class="file-inputs">
             <div class="file-input-group">
-                <label for="jsonFile">
-                    📄 CRM JSON File (existing translations):
-                    <span class="tooltip-icon" title="Upload the Content Docstore template (JSON file) that contains contentDoc.content.localizedContents structure">ℹ️</span>
-                </label>
+                <label for="jsonFile">📄 CRM JSON File (existing template):</label>
                 <InputFile id="jsonFile" OnChange="@OnJsonFileSelected" accept=".json" />
                 @if (!string.IsNullOrEmpty(jsonFileName))
                 {

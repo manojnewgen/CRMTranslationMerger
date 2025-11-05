@@ -20,7 +20,7 @@ body {
 
 /* Container */
 .container {
-    max-width: 900px;
+    max-width: 1200px;
     margin: 2rem auto;
     padding: 2rem;
     background: white;
@@ -28,10 +28,24 @@ body {
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
+/* Header Section */
+.header-section {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 3px solid #667eea;
+}
+
 h1 {
     color: #333;
     margin: 0 0 0.5rem 0;
     font-size: 2.5rem;
+}
+
+.subtitle {
+    color: #666;
+    font-size: 1.1rem;
+    margin: 0;
 }
 
 h1:focus {
@@ -42,6 +56,151 @@ h2 {
     color: #555;
     margin: 1.5rem 0 1rem 0;
     font-size: 1.5rem;
+}
+
+/* Instructions Panel */
+.instructions-panel {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.instructions-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.instructions-header h2 {
+    color: #2c3e50;
+    margin: 0 0 0.5rem 0;
+    font-size: 2rem;
+}
+
+.instructions-header p {
+    color: #555;
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+/* Steps Grid */
+.steps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.step-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+}
+
+.step-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.step-number {
+    position: absolute;
+    top: -15px;
+    left: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    box-shadow: 0 4px 10px rgba(102, 126, 234, 0.4);
+}
+
+.step-content h3 {
+    color: #2c3e50;
+    margin: 1rem 0 0.75rem 0;
+    font-size: 1.2rem;
+}
+
+.step-content ul {
+    margin: 0;
+    padding-left: 1.5rem;
+    color: #555;
+    line-height: 1.8;
+}
+
+.step-content li {
+    margin-bottom: 0.5rem;
+}
+
+.step-content code {
+    background: #f0f0f0;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    color: #d63384;
+}
+
+.code-example {
+    background: #2c3e50;
+    color: #00ff00;
+    padding: 1rem;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+    line-height: 1.6;
+}
+
+/* Tips Section */
+.tips-section {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.tips-section h3 {
+    color: #2c3e50;
+    margin: 0 0 1rem 0;
+    font-size: 1.3rem;
+}
+
+.tips-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.tip-item {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 4px solid #667eea;
+}
+
+.tip-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.tip-item strong {
+    color: #667eea;
+}
+
+.tip-item div {
+    color: #555;
+    line-height: 1.6;
 }
 
 /* Sections */
