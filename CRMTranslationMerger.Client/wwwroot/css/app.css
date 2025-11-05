@@ -216,3 +216,107 @@ h2 {
     .blazor-error-boundary::after {
         content: "An error has occurred."
     }
+
+/* Workflow Instructions */
+.workflow-instructions {
+    background: #e7f3ff;
+    border: 2px solid #2196F3;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.workflow-instructions h3 {
+    color: #1976D2;
+    margin-top: 0;
+    margin-bottom: 1rem;
+}
+
+.workflow-instructions ol {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+.workflow-instructions li {
+    margin-bottom: 1rem;
+    line-height: 1.6;
+    color: #333;
+}
+
+.workflow-instructions strong {
+    color: #1976D2;
+}
+
+.workflow-instructions code {
+    background: #f5f5f5;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+}
+
+/* Tooltip Icon */
+.tooltip-icon {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    background: #2196F3;
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    font-size: 12px;
+    line-height: 18px;
+    cursor: help;
+    margin-left: 5px;
+    position: relative;
+    font-weight: bold;
+}
+
+.tooltip-icon:hover::after {
+    content: attr(title);
+    position: absolute;
+    left: 25px;
+    top: -5px;
+    background: #333;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    white-space: normal;
+    width: 250px;
+    font-size: 13px;
+    font-weight: normal;
+    line-height: 1.4;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.tooltip-icon:hover::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 5px;
+    border: 6px solid transparent;
+    border-right-color: #333;
+    z-index: 1001;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .workflow-instructions {
+        padding: 1rem;
+    }
+    
+    .workflow-instructions ol {
+        padding-left: 1.2rem;
+    }
+    
+    .tooltip-icon:hover::after {
+        left: auto;
+        right: 0;
+        width: 200px;
+    }
+    
+    .tooltip-icon:hover::before {
+        display: none;
+    }
+}

@@ -10,11 +10,44 @@
     <h1>🌍 CRM Translation Merger</h1>
     <p>Merge Excel translations into CRM JSON (contentDoc.content.localizedContents structure)</p>
 
+    <!-- Workflow Instructions -->
+    <div class="workflow-instructions">
+        <h3>📋 How to Use:</h3>
+        <ol>
+            <li>
+                <strong>Copy data from Google Sheets</strong> to a local Excel file
+                <span class="tooltip-icon" title="Select all translation data in Google Sheets (Ctrl+A), copy (Ctrl+C), then paste into Excel">ℹ️</span>
+            </li>
+            <li>
+                <strong>Download/Extract Content Docstore template</strong> (CRM JSON file)
+                <span class="tooltip-icon" title="Get the existing CRM JSON template that contains the contentDoc structure with localizedContents">ℹ️</span>
+            </li>
+            <li>
+                <strong>Look for keys in the template</strong> like:
+                <code style="display: block; padding: 5px; background: #f5f5f5; margin: 5px 0; font-size: 12px;">
+                    "oneWordTransforYourDay", "YouMightRemember", "messageReceived", "replyNow", "subject", "years"
+                </code>
+                <span class="tooltip-icon" title="These are the translation keys used in your CRM email templates. Find them in contentDoc.content.localizedContents">ℹ️</span>
+            </li>
+            <li>
+                <strong>Replace Excel's first column</strong> with keys from the downloaded template
+                <span class="tooltip-icon" title="Match your Excel translation keys exactly with the keys in the CRM template (case-sensitive!)">ℹ️</span>
+            </li>
+            <li>
+                <strong>Save both files</strong> and upload them below
+                <span class="tooltip-icon" title="Save your Excel file with updated keys, then upload both the CRM JSON template and Excel file">ℹ️</span>
+            </li>
+        </ol>
+    </div>
+
     <div class="upload-section">
         <h2>1️⃣ Upload Files</h2>
         <div class="file-inputs">
             <div class="file-input-group">
-                <label for="jsonFile">📄 CRM JSON File (existing translations):</label>
+                <label for="jsonFile">
+                    📄 CRM JSON File (existing translations):
+                    <span class="tooltip-icon" title="Upload the Content Docstore template (JSON file) that contains contentDoc.content.localizedContents structure">ℹ️</span>
+                </label>
                 <InputFile id="jsonFile" OnChange="@OnJsonFileSelected" accept=".json" />
                 @if (!string.IsNullOrEmpty(jsonFileName))
                 {
@@ -23,7 +56,10 @@
             </div>
 
             <div class="file-input-group">
-                <label for="excelFile">📊 Excel File (new translations):</label>
+                <label for="excelFile">
+                    📊 Excel File (new translations):
+                    <span class="tooltip-icon" title="Upload the Excel file with Google Sheets data. First column should match CRM template keys exactly!">ℹ️</span>
+                </label>
                 <InputFile id="excelFile" OnChange="@OnExcelFileSelected" accept=".xlsx,.xls" />
                 @if (!string.IsNullOrEmpty(excelFileName))
                 {
