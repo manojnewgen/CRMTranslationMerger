@@ -14,6 +14,9 @@ public class PlaceholderConverter
         { "[Recipient age]", "LoadedData.RecipientProfile.Age" }
     };
 
+    // Store detected patterns per translation key (e.g., "subject" -> "String.Append")
+    private readonly Dictionary<string, string> _detectedPatterns = new();
+
     public Dictionary<string, string> ConvertBatch(Dictionary<string, string> texts)
     {
         var results = new Dictionary<string, string>();
@@ -21,6 +24,25 @@ public class PlaceholderConverter
         
         Console.WriteLine($"Starting batch conversion of {texts.Count} texts");
         
+        // PHASE 1: Analyze reference language (usually 'en') to detect patterns
+        var referenceLang = "en";
+        var referenceKeys = texts.Keys.Where(k => k.StartsWith($"{referenceLang}|")).ToList();
+        
+        foreach (var key in referenceKeys)
+        {
+            var text = texts[key];
+            var translationKey = key.Split('|')[1]; // Extract "subject", "messageReceived", etc.
+            
+            // Detect if it already uses String.Append or String.Concat
+            var detectedPattern = DetectHandlebarsPattern(text);
+            if (detectedPattern != null)
+            {
+                _detectedPatterns[translationKey] = detectedPattern;
+                Console.WriteLine($"📌 Detected pattern for '{translationKey}': {detectedPattern}");
+            }
+        }
+        
+        // PHASE 2: Convert all texts using detected patterns
         foreach (var (key, text) in texts)
         {
             try
@@ -31,7 +53,12 @@ public class PlaceholderConverter
                     continue;
                 }
 
-                var converted = ConvertPlaceholdersToHandlebars(text);
+                var translationKey = key.Contains('|') ? key.Split('|')[1] : null;
+                var preferredPattern = translationKey != null && _detectedPatterns.ContainsKey(translationKey) 
+                    ? _detectedPatterns[translationKey] 
+                    : null;
+
+                var converted = ConvertPlaceholdersToHandlebars(text, preferredPattern);
                 results[key] = converted;
                 
                 if (converted != text)
@@ -52,7 +79,19 @@ public class PlaceholderConverter
         return results;
     }
 
-    private string ConvertPlaceholdersToHandlebars(string text)
+    /// <summary>
+    /// Detects if text already contains String.Append or String.Concat
+    /// </summary>
+    private string? DetectHandlebarsPattern(string text)
+    {
+        if (text.Contains("{{String.Append"))
+            return "String.Append";
+        if (text.Contains("{{String.Concat"))
+            return "String.Concat";
+        return null;
+    }
+
+    private string ConvertPlaceholdersToHandlebars(string text, string? preferredPattern = null)
     {
         if (string.IsNullOrWhiteSpace(text))
             return text;
@@ -79,7 +118,7 @@ public class PlaceholderConverter
             return text;
         }
 
-        return ConvertComplexText(text, matches);
+        return ConvertComplexText(text, matches, preferredPattern);
     }
 
     /// <summary>
@@ -122,7 +161,7 @@ public class PlaceholderConverter
         return text;
     }
 
-    private string ConvertComplexText(string text, MatchCollection matches)
+    private string ConvertComplexText(string text, MatchCollection matches, string? preferredPattern = null)
     {
         var parts = new List<string>();
         var lastIndex = 0;
@@ -164,8 +203,13 @@ public class PlaceholderConverter
             return parts[0].StartsWith("\"") ? text : $"{{{{{parts[0]}}}}}";
         }
 
+        // Use detected pattern from reference language, or default to String.Concat
+        var method = preferredPattern ?? "String.Concat";
         var concatenated = string.Join(" ", parts);
-        return $"{{{{String.Concat {concatenated}}}}}";
+        
+        Console.WriteLine($"🔧 Using {method} for conversion (detected: {preferredPattern ?? "none"})");
+        
+        return $"{{{{{method} {concatenated}}}}}";
     }
 
     private string EscapeQuotes(string text)
