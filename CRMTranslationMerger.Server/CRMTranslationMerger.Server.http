@@ -1,0 +1,6 @@
+@CRMTranslationMerger.Server_HostAddress = http://localhost:5159
+
+GET {{CRMTranslationMerger.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

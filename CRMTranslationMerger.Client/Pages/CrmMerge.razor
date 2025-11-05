@@ -1,0 +1,534 @@
+@page "/crm-merge"
+@using CRMTranslationMerger.Shared.Models
+@using System.Text.Json
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<PageTitle>CRM Translation Merger - Real Structure</PageTitle>
+
+<div class="container">
+    <h1>🌍 CRM Translation Merger</h1>
+    <p>Merge Excel translations into CRM JSON (contentDoc.content.localizedContents structure)</p>
+
+    <div class="upload-section">
+        <h2>1️⃣ Upload Files</h2>
+        <div class="file-inputs">
+            <div class="file-input-group">
+                <label for="jsonFile">📄 CRM JSON File (existing translations):</label>
+                <InputFile id="jsonFile" OnChange="@OnJsonFileSelected" accept=".json" />
+                @if (!string.IsNullOrEmpty(jsonFileName))
+                {
+                    <span class="file-name">✓ @jsonFileName</span>
+                }
+            </div>
+
+            <div class="file-input-group">
+                <label for="excelFile">📊 Excel File (new translations):</label>
+                <InputFile id="excelFile" OnChange="@OnExcelFileSelected" accept=".xlsx,.xls" />
+                @if (!string.IsNullOrEmpty(excelFileName))
+                {
+                    <span class="file-name">✓ @excelFileName</span>
+                }
+                <small style="color: #666; display: block; margin-top: 5px;">
+                    Supports both formats:<br/>
+                    • Matrix: Key column + language columns (UK, Bulgarian, etc.)<br/>
+                    • Standard: LanguageCode, TranslationKey, Value
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <div class="options-section">
+        <h2>2️⃣ Options</h2>
+        <label>
+            <input type="checkbox" @bind="useAiConversion" />
+            Use AI to convert Excel placeholders to Handlebars (e.g., [Sender name] → {{LoadedData.SenderProfile.Handle}})
+        </label>
+    </div>
+
+    <div class="action-section">
+        <button class="btn-primary" @onclick="MergeFiles" disabled="@(!CanMerge || isProcessing)">
+            @if (isProcessing)
+            {
+                <span>⏳ Processing...</span>
+            }
+            else
+            {
+                <span>🚀 Merge Translations</span>
+            }
+        </button>
+    </div>
+
+    @if (!string.IsNullOrEmpty(statusMessage))
+    {
+        <div class="@(hasError ? "alert-error" : "alert-success")">
+            @statusMessage
+        </div>
+    }
+
+    @if (mergeStats != null)
+    {
+        <div class="results-section">
+            <h2>✅ Merge Complete!</h2>
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-label">Languages:</span>
+                    <span class="stat-value">@mergeStats.Languages</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Translation Keys:</span>
+                    <span class="stat-value">@mergeStats.TotalKeys</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Added:</span>
+                    <span class="stat-value added">+@mergeStats.Added</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Updated:</span>
+                    <span class="stat-value updated">↻@mergeStats.Updated</span>
+                </div>
+            </div>
+
+            <button class="btn-secondary" @onclick="DownloadResult">
+                💾 Download Merged JSON
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    private string? jsonFileName;
+    private string? excelFileName;
+    private string? jsonContent;
+    private string? excelDataJson;
+    private bool useAiConversion = true;
+    private bool isProcessing = false;
+    private string? statusMessage;
+    private bool hasError = false;
+    private MergeStats? mergeStats;
+    private string? mergedJsonResult;
+    
+    // Column name mappings (auto-detected from Excel)
+    private string? languageColumn;
+    private string? keyColumn;
+    private string? valueColumn;
+
+    private bool CanMerge => !string.IsNullOrEmpty(jsonContent) && !string.IsNullOrEmpty(excelDataJson);
+
+    private class MergeStats
+    {
+        public int Languages { get; set; }
+        public int TotalKeys { get; set; }
+        public int Added { get; set; }
+        public int Updated { get; set; }
+    }
+
+    private async Task OnJsonFileSelected(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            jsonFileName = file.Name;
+
+            using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB limit
+            using var reader = new StreamReader(stream);
+            jsonContent = await reader.ReadToEndAsync();
+
+            // Validate JSON structure
+            var doc = JsonDocument.Parse(jsonContent);
+            if (!doc.RootElement.TryGetProperty("contentDoc", out _))
+            {
+                throw new Exception("Invalid CRM JSON structure - missing 'contentDoc'");
+            }
+
+            statusMessage = $"✓ CRM JSON file loaded: {jsonFileName}";
+            hasError = false;
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"❌ Error loading JSON: {ex.Message}";
+            hasError = true;
+            jsonContent = null;
+            jsonFileName = null;
+        }
+    }
+
+    private async Task OnExcelFileSelected(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            excelFileName = file.Name;
+
+            using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            var fileBytes = memoryStream.ToArray();
+            var base64 = Convert.ToBase64String(fileBytes);
+
+            // Parse Excel via JavaScript
+            excelDataJson = await JS.InvokeAsync<string>("excelInterop.parseExcel", base64);
+
+            // Validate structure
+            var excelData = JsonSerializer.Deserialize<List<Dictionary<string, string>>>(excelDataJson);
+            if (excelData == null || excelData.Count == 0)
+            {
+                throw new Exception("No data found in Excel");
+            }
+
+            var firstRow = excelData[0];
+            var columns = firstRow.Keys.ToList();
+            
+            // Check if this is a MATRIX format (Key column + multiple language columns)
+            // Matrix format: __EMPTY/Key column + UK/Bulgarian/Czech/etc. columns
+            var possibleKeyColumns = new[] { "__EMPTY", "Key", "TranslationKey", "Name", "Field" };
+            var keyColumnName = columns.FirstOrDefault(c => possibleKeyColumns.Contains(c, StringComparer.OrdinalIgnoreCase));
+            
+            if (keyColumnName != null && columns.Count > 1)
+            {
+                // MATRIX FORMAT: First column is keys, rest are languages
+                statusMessage = $"✓ Excel parsed (Matrix format): {excelFileName} ({excelData.Count} rows, {columns.Count - 1} languages)";
+                hasError = false;
+                languageColumn = null; // Not used in matrix format
+                keyColumn = keyColumnName;
+                valueColumn = null; // Not used in matrix format
+                return;
+            }
+            
+            // STANDARD FORMAT: LanguageCode, TranslationKey, Value columns
+            // Auto-detect column names (flexible matching)
+            languageColumn = DetectColumn(columns, new[] { "LanguageCode", "Language", "Lang", "Locale", "Culture", "CultureCode" });
+            keyColumn = DetectColumn(columns, new[] { "TranslationKey", "Key", "Name", "Field", "Property" });
+            valueColumn = DetectColumn(columns, new[] { "Value", "Translation", "Text", "Content", "Message" });
+            
+            if (languageColumn == null || keyColumn == null || valueColumn == null)
+            {
+                var available = string.Join(", ", columns);
+                throw new Exception($"Could not detect required columns. Available columns: {available}. " +
+                    $"Expected columns like: LanguageCode/Language, TranslationKey/Key, Value/Translation");
+            }
+            
+            statusMessage = $"✓ Excel parsed: {excelFileName} ({excelData.Count} rows) - Detected columns: {languageColumn}, {keyColumn}, {valueColumn}";
+            hasError = false;
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"❌ Error parsing Excel: {ex.Message}";
+            hasError = true;
+            excelDataJson = null;
+            excelFileName = null;
+        }
+    }
+
+    private async Task MergeFiles()
+    {
+        if (!CanMerge) return;
+
+        isProcessing = true;
+        statusMessage = "🔄 Merging translations...";
+        hasError = false;
+        mergeStats = null;
+
+        try
+        {
+            // Parse CRM JSON
+            var crmDoc = JsonSerializer.Deserialize<CrmDocument>(jsonContent!);
+            if (crmDoc?.ContentDoc?.Content?.LocalizedContents == null)
+            {
+                throw new Exception("Invalid CRM JSON structure");
+            }
+
+            // Parse Excel data
+            var excelData = JsonSerializer.Deserialize<List<Dictionary<string, string>>>(excelDataJson!);
+            if (excelData == null)
+            {
+                throw new Exception("Failed to parse Excel data");
+            }
+
+            var localizedContents = crmDoc.ContentDoc.Content.LocalizedContents;
+            var addedCount = 0;
+            var updatedCount = 0;
+            var languagesSet = new HashSet<string>(localizedContents.Keys);
+
+            // Check format: Matrix vs Standard
+            bool isMatrixFormat = languageColumn == null && keyColumn != null;
+
+            if (isMatrixFormat)
+            {
+                // MATRIX FORMAT: Each row has a key, and each column (except key column) is a language
+                var firstRow = excelData[0];
+                var languageColumns = firstRow.Keys.Where(k => k != keyColumn).ToList();
+                
+                // Map Excel language names to CRM language codes
+                var languageMapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "UK", "en" },
+                    { "English", "en" },
+                    { "Bulgarian", "bg-BG" },
+                    { "Czech", "cs-CZ" },
+                    { "Danish", "da-DK" },
+                    { "Spanish", "es-ES" },
+                    { "Finnish", "fi-FI" },
+                    { "French", "fr-FR" },
+                    { "Hungarian", "hu-HU" },
+                    { "Italian", "it-IT" },
+                    { "Dutch", "nl-BE" },
+                    { "Norwegian", "nb-NO" },
+                    { "Polish", "pl-PL" },
+                    { "Portuguese", "pt-PT" },
+                    { "Romanian", "ro-RO" },
+                    { "Slovak", "sk-SK" },
+                    { "Swedish", "sv-SE" }
+                };
+
+                foreach (var row in excelData)
+                {
+                    var translationKey = row[keyColumn!];
+                    if (string.IsNullOrWhiteSpace(translationKey)) continue;
+
+                    foreach (var langCol in languageColumns)
+                    {
+                        var value = row.GetValueOrDefault(langCol, "");
+                        if (string.IsNullOrWhiteSpace(value)) continue;
+
+                        // Map Excel language name to CRM code
+                        var langCode = languageMapping.GetValueOrDefault(langCol, langCol.ToLower());
+
+                        // Ensure language exists in CRM
+                        if (!localizedContents.ContainsKey(langCode))
+                        {
+                            localizedContents[langCode] = new Dictionary<string, string>();
+                            languagesSet.Add(langCode);
+                        }
+
+                        var langDict = localizedContents[langCode];
+
+                        // NO AI CONVERSION HERE - we'll do batch later
+                        // Just store the original value
+                        if (langDict.ContainsKey(translationKey))
+                        {
+                            langDict[translationKey] = value;
+                            updatedCount++;
+                        }
+                        else
+                        {
+                            langDict[translationKey] = value;
+                            addedCount++;
+                        }
+                    }
+                }
+                
+                // BATCH AI CONVERSION: Convert ALL texts at once (ENTERPRISE APPROACH)
+                if (useAiConversion)
+                {
+                    try
+                    {
+                        // Collect all texts from localizedContents
+                        var textsToConvert = new Dictionary<string, string>();
+                        foreach (var (langCode, langDict) in localizedContents)
+                        {
+                            foreach (var (key, value) in langDict)
+                            {
+                                var cellKey = $"{langCode}|{key}";
+                                textsToConvert[cellKey] = value;
+                            }
+                        }
+                        
+                        Console.WriteLine($"🚀 Batch converting {textsToConvert.Count} texts...");
+                        var convertedTexts = await ConvertBatchWithAi(textsToConvert);
+                        Console.WriteLine($"✅ Batch conversion complete!");
+
+                        // Apply converted texts back
+                        foreach (var (cellKey, convertedText) in convertedTexts)
+                        {
+                            var parts = cellKey.Split('|');
+                            if (parts.Length == 2)
+                            {
+                                var langCode = parts[0];
+                                var key = parts[1];
+                                if (localizedContents.ContainsKey(langCode))
+                                {
+                                    localizedContents[langCode][key] = convertedText;
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"❌ Batch AI conversion failed: {ex.Message}. Using original values.");
+                    }
+                }
+            }
+            else
+            {
+                // STANDARD FORMAT: LanguageCode, TranslationKey, Value columns
+                // Group Excel data by language (using detected column name)
+                var excelByLanguage = excelData
+                    .GroupBy(row => row[languageColumn!])
+                    .ToDictionary(g => g.Key, g => g.ToList());
+
+                // Process each language from Excel
+                foreach (var (langCode, rows) in excelByLanguage)
+                {
+                    // Ensure language exists in CRM
+                    if (!localizedContents.ContainsKey(langCode))
+                    {
+                        localizedContents[langCode] = new Dictionary<string, string>();
+                        languagesSet.Add(langCode);
+                    }
+
+                    var langDict = localizedContents[langCode];
+
+                    // Process each translation key (using detected column names)
+                    foreach (var row in rows)
+                    {
+                        var key = row[keyColumn!];
+                        var value = row[valueColumn!];
+
+                        // Convert with AI if enabled
+                        if (useAiConversion && !string.IsNullOrEmpty(value))
+                        {
+                            try
+                            {
+                                value = await ConvertWithAi(value, localizedContents);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"AI conversion failed for key '{key}' lang '{langCode}': {ex.Message}. Using original value.");
+                                // Continue with original value if AI fails
+                            }
+                        }
+
+                        // Add or update
+                        if (langDict.ContainsKey(key))
+                        {
+                            langDict[key] = value;
+                            updatedCount++;
+                        }
+                        else
+                        {
+                            langDict[key] = value;
+                            addedCount++;
+                        }
+                    }
+                }
+            }
+
+            // Calculate total keys across all languages
+            var totalKeys = localizedContents.Values.Sum(dict => dict.Count);
+
+            // Generate result JSON
+            var options = new JsonSerializerOptions 
+            { 
+                WriteIndented = true,
+                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            };
+            mergedJsonResult = JsonSerializer.Serialize(crmDoc, options);
+
+            mergeStats = new MergeStats
+            {
+                Languages = languagesSet.Count,
+                TotalKeys = totalKeys,
+                Added = addedCount,
+                Updated = updatedCount
+            };
+
+            statusMessage = $"✅ Successfully merged {addedCount + updatedCount} translations across {languagesSet.Count} languages!";
+            hasError = false;
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"❌ Merge failed: {ex.Message}";
+            hasError = true;
+            mergeStats = null;
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task<string> ConvertWithAi(string text, Dictionary<string, Dictionary<string, string>> existingTranslations)
+    {
+        try
+        {
+            // Get sample of existing translations for context
+            var sampleTranslations = existingTranslations
+                .SelectMany(kvp => kvp.Value.Take(3))
+                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+            var request = new AiRequest
+            {
+                Text = text,
+                JsonContext = sampleTranslations,
+                ExcelContext = new { OriginalText = text }
+            };
+
+            var response = await Http.PostAsJsonAsync("/api/convert-placeholder", request);
+            var result = await response.Content.ReadFromJsonAsync<AiResponse>();
+
+            if (result?.Success == true && !string.IsNullOrEmpty(result.ConvertedText))
+            {
+                return result.ConvertedText;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"AI conversion failed: {ex.Message}");
+        }
+
+        return text;
+    }
+
+    private string? DetectColumn(List<string> columns, string[] possibleNames)
+    {
+        // Try exact match first (case-insensitive)
+        foreach (var name in possibleNames)
+        {
+            var match = columns.FirstOrDefault(c => c.Equals(name, StringComparison.OrdinalIgnoreCase));
+            if (match != null) return match;
+        }
+        
+        // Try partial match
+        foreach (var name in possibleNames)
+        {
+            var match = columns.FirstOrDefault(c => c.Contains(name, StringComparison.OrdinalIgnoreCase));
+            if (match != null) return match;
+        }
+        
+        return null;
+    }
+
+    private async Task<Dictionary<string, string>> ConvertBatchWithAi(Dictionary<string, string> texts)
+    {
+        try
+        {
+            Console.WriteLine($"Sending {texts.Count} texts to batch API...");
+            
+            var response = await Http.PostAsJsonAsync("/api/convert-batch", texts);
+            response.EnsureSuccessStatusCode();
+            
+            var result = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+            
+            Console.WriteLine($"Received {result?.Count ?? 0} converted texts from API");
+            
+            return result ?? texts; // Fallback to original if null
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Batch AI conversion error: {ex.Message}");
+            return texts; // Return originals on error
+        }
+    }
+
+    private async Task DownloadResult()
+    {
+        if (string.IsNullOrEmpty(mergedJsonResult)) return;
+
+        var fileName = $"merged-crm-{DateTime.Now:yyyyMMdd-HHmmss}.json";
+        var bytes = System.Text.Encoding.UTF8.GetBytes(mergedJsonResult);
+        var base64 = Convert.ToBase64String(bytes);
+
+        await JS.InvokeVoidAsync("excelInterop.downloadFile", fileName, base64);
+    }
+}

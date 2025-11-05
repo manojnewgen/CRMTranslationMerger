@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>CRM Translation Merger</title>
+    <base href="/" />
+    <link href="css/app.css" rel="stylesheet" />
+    
+    <!-- If you add any scoped CSS files, uncomment the following to load them
+    <link href="CRMTranslationMerger.Client.styles.css" rel="stylesheet" /> -->
+</head>
+
+<body>
+    <div id="app">
+        <div class="loading-screen">
+            <h2>🌍 Loading CRM Translation Merger...</h2>
+        </div>
+    </div>
+
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
+    
+    <!-- SheetJS library for Excel parsing -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    
+    <!-- Excel interop JavaScript -->
+    <script src="excelInterop.js"></script>
+    
+    <script src="_framework/blazor.webassembly.js"></script>
+</body>
+
+</html>

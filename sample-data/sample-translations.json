@@ -1,0 +1,193 @@
+{
+  "contentDoc": {
+    "header": {
+      "workspaceId": 41,
+      "key": {
+        "name": "message.received",
+        "siteCode": 0,
+        "urlCode": 0,
+        "schemaVersion": 1,
+        "stringKey": "message.received::0::0::1"
+      },
+      "type": "CRM_Email_Content",
+      "status": "Published",
+      "comment": "Message Received (Mutual)",
+      "ticket": "CRM-17853",
+      "version": 12,
+      "createdBy": "pearson.stewart@peoplemedia.com",
+      "createdDt": "2025-09-26T13:25:02.005-05:00",
+      "modifiedBy": "contractor.wsilva@match.com",
+      "modifiedDt": "2025-09-26T13:26:47.0233-05:00"
+    },
+    "content": {
+      "configuration": {
+        "framework": "Handlebars",
+        "layout": {
+          "stringKey": "Notification_Email_Template::0::0::1",
+          "type": "CRM_Email_Layout"
+        },
+        "inputDataParameters": [],
+        "projectionParameters": [],
+        "dataLoadParameters": [
+          {
+            "type": "Profile",
+            "lookupInfo": {
+              "userLookupMode": "Sender",
+              "lookupAttributes": {
+                "includeProfileSelf": "False",
+                "includeProfileSeek": "False",
+                "includeProfileText": "False",
+                "includeProfileAnswers": "False",
+                "includeUserPropersties": "False"
+              }
+            },
+            "contextVarName": "SenderProfile",
+            "isRequired": true,
+            "isDeprecated": false
+          }
+        ],
+        "languageFallbackMappings": [],
+        "sourceTranslationLanguage": "en"
+      },
+      "data": "{{set (String.Replace (String.Append (content-block \"SiteRootURL\") \"deeplink/messages?mid={0}\") \"{0}\" (Object.ToString CrmId)) var=\"ctaURL\"}}\r\n{{set (String.Replace (String.Append (LocalVars.ctaURL) \"&uid={0}\") \"{0}\" (Object.ToString (encrypted-string LoadedData.SenderProfile.UserId))) var=\"ctaURL\"}}\r\n\r\n\r\n{{set-envelope-var (localized \"Subject\") var=\"subject\"}}\r\n\r\n<style>\r\n.desktop {\r\n\tdisplay: none;\r\n}\r\n.mobile {\r\n\tdisplay: block;\r\n}\r\n@media only screen and (min-width: 500px) {\r\n.desktop {\r\n\tdisplay: block;\r\n}\r\n.mobile {\r\n\tdisplay: none;\r\n}\r\n}\r\n</style>\r\n\r\n{{#>content-layout}}\r\n \t{{#*inline \"content\"}}\r\n\t\t<tr style=\"color: #fff; text-align: center; width: 100%; font-family: Montserrat, sans-serif;\">\r\n\t\t\t<td style=\"padding-top: 10px; font-weight: 600;\">\r\n\t\t\t\t<a href={{LocalVars.ctaURL}}>\r\n\t\t\t\t\t<span style=\"vertical-align: sub;\"><img src={{image-content-url \"IconInbox\"}} width=\"20\" /></span> {{localized 'messageReceived'}}\r\n\t\t\t\t</a>\r\n\t\t\t</td>\r\n\t\t</tr>\r\n\t\t<tr style=\"font-family: Montserrat, sans-serif; color: #1F2F49;\">\r\n\t\t\t<td align=\"center\" style=\"padding: 10px 15px 20px 15px; font-size: 16px;\" class=\"mobile\">\r\n\t\t\t\t<table style=\"background-color: #fff; width: 100%; border-radius: 10px;\">\r\n\t\t\t\t\t<tr>\r\n\t\t\t\t\t\t<td align=\"center\" style=\"padding: 20px;\">\r\n\t\t\t\t\t\t\t<a href={{LocalVars.ctaURL}}>\r\n\t\t\t\t\t\t\t\t<div style=\"font-size: 16px; font-weight: bold;\">{{LoadedData.SenderProfile.Handle}} {{#if (Boolean.Equal LoadedData.SenderProfile.ProfileSelf.profileOn true)}}<span style=\"display: inline-block; width: 10px; height: 10px; background-color: #01BFA7; border-radius: 50%;\"></span>{{/if}}</div>\r\n\t\t\t\t\t\t\t\t<div style=\"font-size: 12px; color: #777; padding-bottom: 10px;\">{{LoadedData.SenderProfile.Age}} {{localized \"years\"}}</div>\r\n\t\t\t\t\t\t\t\t<div style=\"padding: 1px; border-radius: 25%; border: 2px solid #ED147D; width: 120px; height: 120px;\">\r\n\t\t\t\t\t\t\t\t\t<img src=\"{{blur-photo LoadedData.SenderProfile.primaryPhotoUrl 10}}\" width=\"120px\" height=\"120px\" style=\"border-radius: 25%; object-fit: cover;\" />\r\n\t\t\t\t\t\t\t\t</div>\r\n\t\t\t\t\t\t\t</a>\r\n\t\t\t\t\t\t</td>\r\n\t\t\t\t\t</tr>\r\n\t\t\t\t\t<tr>\r\n\t\t\t\t\t\t<td style=\"padding: 20px 20px 0px 20px; font-size: 16px; text-align: center;\">\r\n\t\t\t\t\t\t\t<a href={{LocalVars.ctaURL}}>\r\n\t\t\t\t\t\t\t\t<div style=\"font-weight: bold;\">{{localized \"oneWordTransforYourDay\"}}</div>\r\n\t\t\t\t\t\t\t\t<div>{{localized \"YouMightRemember\"}}</div>\r\n\t\t\t\t\t\t\t</a>\r\n\t\t\t\t\t\t</td>\r\n\t\t\t\t\t</tr>\r\n\t\t\t\t\t<tr>\r\n\t\t\t\t\t\t<td align=\"center\" style=\"padding: 10px 0;\">\r\n\t\t\t\t\t\t\t{{content-block \"content.pillCTA\" ctaColor=\"#ED147D\" ctaTextColor=\"#FFFFFF\" CTAFontSize=\"16\" CTAHeight=\"40\" ctaText=(localized \"replyNow\") ctaImage=(image-content-url \"CtaReply\") CTAUrl=(LocalVars.ctaURL) }}\r\n\t\t\t\t\t\t</td>\r\n\t\t\t\t\t</tr>\r\n\t\t\t\t</table>\r\n\t\t\t</td>\r\n\t\t\t<td align=\"center\" style=\"margin:10px 20px 20px 20px;\" class=\"desktop\">\r\n\t\t\t\t<table style=\"background-color: #fff; width: 100%; border-radius: 10px;\">\r\n\t\t\t\t\t<tr>\r\n\t\t\t\t\t\t<td style=\"padding: 20px; font-size: 16px;\">\r\n\t\t\t\t\t\t\t<table>\r\n\t\t\t\t\t\t\t\t<tr>\r\n\t\t\t\t\t\t\t\t\t<td align=\"center\" style=\"vertical-align: top;\">\r\n\t\t\t\t\t\t\t\t\t\t<a href={{LocalVars.ctaURL}}>\r\n\t\t\t\t\t\t\t\t\t\t\t<div style=\"font-size: 16px; font-weight: bold; text-align: center;\">{{LoadedData.SenderProfile.Handle}} {{#if (Boolean.Equal LoadedData.SenderProfile.ProfileSelf.profileOn true)}}<span style=\"display: inline-block; width: 10px; height: 10px; background-color: #01BFA7; border-radius: 50%;\"></span>{{/if}}</div>\r\n\t\t\t\t\t\t\t\t\t\t\t<div style=\"font-size: 12px; color: #777; padding-bottom: 10px; text-align: center;\">{{LoadedData.SenderProfile.Age}} {{localized \"years\"}}</div>\r\n\t\t\t\t\t\t\t\t\t\t\t<div style=\"padding: 1px; border-radius: 25%; border: 2px solid #ED147D; width: 120px; height: 120px; display: inline-block;\">\r\n\t\t\t\t\t\t\t\t\t\t\t\t<img src=\"{{blur-photo LoadedData.SenderProfile.primaryPhotoUrl 10}}\" width=\"120px\" height=\"120px\" style=\"border-radius: 25%; object-fit: cover;\" />\r\n\t\t\t\t\t\t\t\t\t\t\t</div>\r\n\t\t\t\t\t\t\t\t\t\t</a>\r\n\t\t\t\t\t\t\t\t\t</td>\r\n\t\t\t\t\t\t\t\t\t<td>\r\n\t\t\t\t\t\t\t\t\t\t<table>\r\n\t\t\t\t\t\t\t\t\t\t\t<tr>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<td align=\"center\">\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t<a href={{LocalVars.ctaURL}}>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<div style=\"font-weight: 600;padding: 0px 50px\">{{localized \"oneWordTransforYourDay\"}}</div>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<div style=\"padding: 0px 50px\">{{localized \"YouMightRemember\"}}</div>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t</a>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t<tr>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<td align=\"center\" style=\"padding: 10px 30px 0px 30px\">\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t{{content-block \"content.pillCTA\" ctaColor=\"#ED147D\" ctaTextColor=\"#FFFFFF\" CTAFontSize=\"16\" CTAHeight=\"40\" CTAWidth=\"100%\" ctaText=(localized \"replyNow\") ctaImage=(image-content-url \"CtaReply\") CTAUrl=(LocalVars.ctaURL) }}\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t</td>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t</tr>\r\n\t\t\t\t\t\t\t\t\t\t\t\t</td>\r\n\t\t\t\t\t\t\t\t\t\t\t</tr>\r\n\t\t\t\t\t\t\t\t\t\t</table>\r\n\t\t\t\t\t\t\t\t\t</td>\r\n\t\t\t\t\t\t\t\t</tr>\r\n\t\t\t\t\t\t\t</table>\r\n\t\t\t\t\t\t</td>\r\n\t\t\t\t\t</tr>\r\n\t\t\t\t</table>\r\n\t\t\t</td>\r\n\t\t</tr>\r\n\r\n\t{{/inline}}\r\n\r\n{{/content-layout}}",
+      "localizedContents": {
+        "de": {
+          "oneWordTransforYourDay": "Ein einziges Wort kann Ihren Tag verändern...",
+          "YouMightRemember": "Vielleicht werden Sie sich noch lange an diese Nachricht erinnern ;)",
+          "messageReceived": "{{String.Append LoadedData.SenderProfile.Handle \" hat Ihnen geschrieben\"}}",
+          "replyNow": "Jetzt antworten",
+          "subject": "{{String.Append LoadedData.SenderProfile.Handle \" hat Ihnen gerade geschrieben 💌  Was werden Sie antworten?\"}}",
+          "years": "Jahre"
+        },
+        "en": {
+          "oneWordTransforYourDay": "Just one word could totally transform your day...",
+          "YouMightRemember": "You might just remember this message for a long time to come 😉",
+          "messageReceived": "{{String.Append LoadedData.SenderProfile.Handle \" messaged you\"}}",
+          "replyNow": "Reply now",
+          "subject": "{{String.Append LoadedData.SenderProfile.Handle \" has just messaged you 💌  No time like the present!\"}}",
+          "years": "years"
+        },
+        "bg-BG": {
+          "oneWordTransforYourDay": "Само една дума може да преобърне целия ви ден... Може да помните това съобщение дълго време 😉",
+          "YouMightRemember": "Може да помните това съобщение дълго време 😉",
+          "messageReceived": "{{String.Append LoadedData.SenderProfile.Handle \" ви пише\"}}",
+          "replyNow": "Отговорете",
+          "subject": "{{String.Append LoadedData.SenderProfile.Handle \" току-що ви писа 💌 Какво ще отговорите?\"}}",
+          "years": "🎂"
+        },
+        "cs-CZ": {
+          "oneWordTransforYourDay": "Váš den může změnit jediné slovo...Tato zpráva se vám možná vryje do srdce 😉",
+          "YouMightRemember": "Tato zpráva se vám možná vryje do srdce 😉",
+          "messageReceived": "{{String.Append LoadedData.SenderProfile.Handle \" vám píše\"}}",
+          "replyNow": "Odpovím na zprávu",
+          "subject": "{{String.Append LoadedData.SenderProfile.Handle \" vám právě píše! 💌 Co odpovíte?\"}}",
+          "years": "🎂"
+        },
+        "da-DK": {
+          "oneWordTransforYourDay": "Et enkelt ord kan ændre retningen på dagen... Måske vil du huske vedkommendes besked i lang tid 😉",
+          "YouMightRemember": "Måske vil du huske vedkommendes besked i lang tid 😉",
+          "messageReceived": "{{String.Append LoadedData.SenderProfile.Handle \" har skrevet til dig\"}}",
+          "replyNow": "Jeg vil svare vedkommende",
+          "subject": "{{String.Append LoadedData.SenderProfile.Handle \" har lige skrevet til dig 💌 Hvad vil du svare?\"}}",
+          "years": "år"
+        },
+        "es-ES": {
+          "oneWordTransforYourDay": "Una sola palabra puede cambiar el curso de tu día... Es posible que te acuerdes durante mucho tiempo de su mensaje 😉",
+          "YouMightRemember": "Es posible que te acuerdes durante mucho tiempo de su mensaje 😉",
+          "messageReceived": "{{String.Append LoadedData.SenderProfile.Handle \" te ha escrito\"}}",
+          "replyNow": "Responder",
+          "subject": "{{String.Append LoadedData.SenderProfile.Handle \" te ha escrito 💌. ¿Qué le vas a responder?\"}}",
+          "years": "años"
+        },
+        "fi-FI": {
+          "oneWordTransforYourDay": "Yksi ainoa sana voi muuttaa päiväsi kulun... Saatat muistaa hänen viestinsä vielä pitkään😉",
+          "YouMightRemember": "Saatat muistaa hänen viestinsä vielä pitkään😉",
+          "messageReceived": "Hän kirjoitti sinulle",
+          "replyNow": "Haluan vastata hänelle",
+          "subject": "{{String.Append LoadedData.SenderProfile.Handle \" kirjoitti juuri sinulle 💌 Mitä vastaat hänelle?\"}}",
+          "years": "vuotta"
+        },
+        "fr-FR": {
+          "oneWordTransforYourDay": "Un seul mot peut changer le cours de votre journée... Vous vous souviendrez peut-être longtemps de son message 😉",
+          "YouMightRemember": "Vous vous souviendrez peut-être longtemps de son message 😉",
+          "messageReceived": "{{String.Append LoadedData.SenderProfile.Handle \" vous a écrit\"}}",
+          "replyNow": "Je lui réponds",
+          "subject": "{{String.Append LoadedData.SenderProfile.Handle \" vient de vous écrire 💌 Qu'allez-vous lui répondre ?\"}}",
+          "years": "ans"
+        },
+        "hu-HU": {
+          "oneWordTransforYourDay": "Egyetlen szó megváltoztathatja a napját... Lehet, hogy sokáig emlékezni fog az üzenetére 😉",
+          "YouMightRemember": "Lehet, hogy sokáig emlékezni fog az üzenetére 😉",
+          "messageReceived": "{{String.Append LoadedData.SenderProfile.Handle \" írt Önnek\"}}",
+          "replyNow": "Válaszolok",
+          "subject": "{{String.Append LoadedData.SenderProfile.Handle \" éppen most írt Önnek 💌 Mit fog neki válaszolni?\"}}",
+          "years": "🎂"
+        },
+        "it-IT": {
+          "oneWordTransforYourDay": "Basta una parola per cambiare il corso della giornata... Magari il suo sarà un messaggio che ricorderai a lungo 😉",
+          "YouMightRemember": "Magari il suo sarà un messaggio che ricorderai a lungo 😉",
+          "messageReceived": "{{String.Append LoadedData.SenderProfile.Handle \" ti ha mandato un messaggio\"}}",
+          "replyNow": "Invio una risposta",
+          "subject": "{{String.Append LoadedData.SenderProfile.Handle \" ti ha appena mandato un messaggio 💌 Cosa risponderai?\"}}",
+          "years": "anni"
+        },
+        "nl-BE": {
+          "oneWordTransforYourDay": "Eén woord kan alles veranderen... Dit bericht vergeet je misschien wel nooit meer 😉",
+          "YouMightRemember": "Dit bericht vergeet je misschien wel nooit meer 😉",
+          "messageReceived": "{{String.Append LoadedData.SenderProfile.Handle \" heeft je een bericht gestuurd\"}}",
+          "replyNow": "Reageren",
+          "subject": "{{String.Append LoadedData.SenderProfile.Handle \" heeft je een bericht gestuurd 💌 Wat ga je terug schrijven?\"}}",
+          "years": "jaar"
+        },
+        "nb-NO": {
+          "oneWordTransforYourDay": "Ett enkelt ord kan endre resten av dagen din... Kanskje kommer du til å huske denne meldingen lenge 😉",
+          "YouMightRemember": "Kanskje kommer du til å huske denne meldingen lenge 😉",
+          "messageReceived": "{{String.Append LoadedData.SenderProfile.Handle \" har skrevet til deg\"}}",
+          "replyNow": "Skriv et svar",
+          "subject": "{{String.Append LoadedData.SenderProfile.Handle \" har akkurat skrevet til deg 💌 Skal du svare?\"}}",
+          "years": "år"
+        },
+        "pl-PL": {
+          "oneWordTransforYourDay": "Jedno słowo może zmienić Twój dzień... Być może przypominasz sobie tę wiadomość 😉",
+          "YouMightRemember": "Być może przypominasz sobie tę wiadomość 😉",
+          "messageReceived": "Ktoś do Ciebie napisał... To {{LoadedData.SenderProfile.Handle}}",
+          "replyNow": "Odpowiadam",
+          "subject": "Ktoś do Ciebie napisał! To {{String.Append LoadedData.SenderProfile.Handle \" 💌 Co odpiszesz?\"}}",
+          "years": "🎂"
+        },
+        "pt-PT": {
+          "oneWordTransforYourDay": "Uma só palavra pode alterar o curso do seu dia... Irá provavelmente lembrar-se da sua mensagem daqui por muito tempo 😉",
+          "YouMightRemember": "Irá provavelmente lembrar-se da sua mensagem daqui por muito tempo 😉",
+          "messageReceived": "{{String.Append LoadedData.SenderProfile.Handle \" escreveu-lhe\"}}",
+          "replyNow": "Vou responder-lhe",
+          "subject": "{{String.Append LoadedData.SenderProfile.Handle \" acaba de lhe escrever 💌 O que lhe vai responder?\"}}",
+          "years": "anos"
+        },
+        "ro-RO": {
+          "oneWordTransforYourDay": "Un singur cuvânt îți poate schimba cursul zilei... Îți vei aminti probabil mult timp mesajul său 😉",
+          "YouMightRemember": "Îți vei aminti probabil mult timp mesajul său 😉",
+          "messageReceived": "{{String.Append LoadedData.SenderProfile.Handle \" ți-a scris\"}}",
+          "replyNow": "Îi răspund",
+          "subject": "{{String.Append LoadedData.SenderProfile.Handle \" tocmai ți-a scris 💌 Ce-i vei răspunde?\"}}",
+          "years": "🎂"
+        },
+        "sk-SK": {
+          "oneWordTransforYourDay": "Jediné slovo môže zmeniť priebeh vášho dňa... Na túto správu možno budete ešte dlho spomínať 😉",
+          "YouMightRemember": "Na túto správu možno budete ešte dlho spomínať 😉",
+          "messageReceived": "Tento človek vám napísal: {{LoadedData.SenderProfile.Handle}}",
+          "replyNow": "Odpoviem",
+          "subject": "Dostali ste správu 💌 od: {{String.Append LoadedData.SenderProfile.Handle \" Čo odpoviete?\"}}",
+          "years": "🎂"
+        },
+        "sv-SE": {
+          "oneWordTransforYourDay": "Ett enda ord kan ändra riktning på din dag... Du kommer kanske minnas hens meddelande i många år 😉",
+          "YouMightRemember": "Du kommer kanske minnas hens meddelande i många år 😉",
+          "messageReceived": "{{String.Append LoadedData.SenderProfile.Handle \" har skrivit till dig\"}}",
+          "replyNow": "Jag svarar",
+          "subject": "{{String.Append LoadedData.SenderProfile.Handle \" har skickat dig 💌 Vad ska du svara hen?\"}}",
+          "years": "år"
+        }
+      }
+    }
+  }
+}

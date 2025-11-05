@@ -1,0 +1,65 @@
+{
+  "contentDoc": {
+    "header": {
+      "workspaceId": 41,
+      "key": {
+        "name": "message.received",
+        "siteCode": 0,
+        "urlCode": 0,
+        "schemaVersion": 1,
+        "stringKey": "message.received::0::0::1"
+      },
+      "type": "CRM_Email_Content",
+      "status": "Published",
+      "comment": "Message Received (Mutual)",
+      "ticket": "CRM-17853",
+      "version": 12,
+      "createdBy": "pearson.stewart@peoplemedia.com",
+      "createdDt": "2025-09-26T13:25:02.005-05:00",
+      "modifiedBy": "contractor.wsilva@match.com",
+      "modifiedDt": "2025-09-26T13:26:47.0233-05:00"
+    },
+    "content": {
+      "configuration": {
+        "framework": "Handlebars",
+        "layout": {
+          "stringKey": "Notification_Email_Template::0::0::1",
+          "type": "CRM_Email_Layout"
+        },
+        "inputDataParameters": [],
+        "projectionParameters": [],
+        "dataLoadParameters": [
+          {
+            "type": "Profile",
+            "lookupInfo": {
+              "userLookupMode": "Sender",
+              "lookupAttributes": {
+                "includeProfileSelf": "False",
+                "includeProfileSeek": "False",
+                "includeProfileText": "False",
+                "includeProfileAnswers": "False",
+                "includeUserPropersties": "False"
+              }
+            },
+            "contextVarName": "SenderProfile",
+            "isRequired": true,
+            "isDeprecated": false
+          }
+        ],
+        "languageFallbackMappings": [],
+        "sourceTranslationLanguage": "en"
+      },
+      "data": "{{set (String.Replace (String.Append (content-block \"SiteRootURL\") \"deeplink/messages?mid={0}\") \"{0}\" (Object.ToString CrmId)) var=\"ctaURL\"}}\r\n{{set (String.Replace (String.Append (LocalVars.ctaURL) \"&uid={0}\") \"{0}\" (Object.ToString (encrypted-string LoadedData.SenderProfile.UserId))) var=\"ctaURL\"}}\r\n\r\n\r\n{{set-envelope-var (localized \"Subject\") var=\"subject\"}}\r\n\r\n<style>\r\n.desktop {\r\n\tdisplay: none;\r\n}\r\n.mobile {\r\n\tdisplay: block;\r\n}\r\n@media only screen and (min-width: 500px) {\r\n.desktop {\r\n\tdisplay: block;\r\n}\r\n.mobile {\r\n\tdisplay: none;\r\n}\r\n}\r\n</style>\r\n\r\n{{#>content-layout}}\r\n \t{{#*inline \"content\"}}\r\n\t\t<tr style=\"color: #fff; text-align: center; width: 100%; font-family: Montserrat, sans-serif;\">\r\n\t\t\t<td style=\"padding-top: 10px; font-weight: 600;\">\r\n\t\t\t\t<a href={{LocalVars.ctaURL}}>\r\n\t\t\t\t\t<span style=\"vertical-align: sub;\"><img src={{image-content-url \"IconInbox\"}} width=\"20\" /></span> {{localized 'messageReceived'}}\r\n\t\t\t\t</a>\r\n\t\t\t</td>\r\n\t\t</tr>\r\n\t\t<tr style=\"font-family: Montserrat, sans-serif; color: #1F2F49;\">\r\n\t\t\t<td align=\"center\" style=\"padding: 10px 15px 20px 15px; font-size: 16px;\" class=\"mobile\">\r\n\t\t\t\t<table style=\"background-color: #fff; width: 100%; border-radius: 10px;\">\r\n\t\t\t\t\t<tr>\r\n\t\t\t\t\t\t<td align=\"center\" style=\"padding: 20px;\">\r\n\t\t\t\t\t\t\t<a href={{LocalVars.ctaURL}}>\r\n\t\t\t\t\t\t\t\t<div style=\"font-size: 16px; font-weight: bold;\">{{LoadedData.SenderProfile.Handle}} {{#if (Boolean.Equal LoadedData.SenderProfile.ProfileSelf.profileOn true)}}<span style=\"display: inline-block; width: 10px; height: 10px; background-color: #01BFA7; border-radius: 50%;\"></span>{{/if}}</div>\r\n\t\t\t\t\t\t\t\t<div style=\"font-size: 12px; color: #777; padding-bottom: 10px;\">{{LoadedData.SenderProfile.Age}} {{localized \"years\"}}</div>\r\n\t\t\t\t\t\t\t\t<div style=\"padding: 1px; border-radius: 25%; border: 2px solid #ED147D; width: 120px; height: 120px;\">\r\n\t\t\t\t\t\t\t\t\t<img src=\"{{blur-photo LoadedData.SenderProfile.primaryPhotoUrl 10}}\" width=\"120px\" height=\"120px\" style=\"border-radius: 25%; object-fit: cover;\" />\r\n\t\t\t\t\t\t\t\t</div>\r\n\t\t\t\t\t\t\t</a>\r\n\t\t\t\t\t\t</td>\r\n\t\t\t\t\t</tr>\r\n\t\t\t\t\t<tr>\r\n\t\t\t\t\t\t<td style=\"padding: 20px 20px 0px 20px; font-size: 16px; text-align: center;\">\r\n\t\t\t\t\t\t\t<a href={{LocalVars.ctaURL}}>\r\n\t\t\t\t\t\t\t\t<div style=\"font-weight: bold;\">{{localized \"oneWordTransforYourDay\"}}</div>\r\n\t\t\t\t\t\t\t\t<div>{{localized \"YouMightRemember\"}}</div>\r\n\t\t\t\t\t\t\t</a>\r\n\t\t\t\t\t\t</td>\r\n\t\t\t\t\t</tr>\r\n\t\t\t\t\t<tr>\r\n\t\t\t\t\t\t<td align=\"center\" style=\"padding: 10px 0;\">\r\n\t\t\t\t\t\t\t{{content-block \"content.pillCTA\" ctaColor=\"#ED147D\" ctaTextColor=\"#FFFFFF\" CTAFontSize=\"16\" CTAHeight=\"40\" ctaText=(localized \"replyNow\") ctaImage=(image-content-url \"CtaReply\") CTAUrl=(LocalVars.ctaURL) }}\r\n\t\t\t\t\t\t</td>\r\n\t\t\t\t\t</tr>\r\n\t\t\t\t</table>\r\n\t\t\t</td>\r\n\t\t\t<td align=\"center\" style=\"margin:10px 20px 20px 20px;\" class=\"desktop\">\r\n\t\t\t\t<table style=\"background-color: #fff; width: 100%; border-radius: 10px;\">\r\n\t\t\t\t\t<tr>\r\n\t\t\t\t\t\t<td style=\"padding: 20px; font-size: 16px;\">\r\n\t\t\t\t\t\t\t<table>\r\n\t\t\t\t\t\t\t\t<tr>\r\n\t\t\t\t\t\t\t\t\t<td align=\"center\" style=\"vertical-align: top;\">\r\n\t\t\t\t\t\t\t\t\t\t<a href={{LocalVars.ctaURL}}>\r\n\t\t\t\t\t\t\t\t\t\t\t<div style=\"font-size: 16px; font-weight: bold; text-align: center;\">{{LoadedData.SenderProfile.Handle}} {{#if (Boolean.Equal LoadedData.SenderProfile.ProfileSelf.profileOn true)}}<span style=\"display: inline-block; width: 10px; height: 10px; background-color: #01BFA7; border-radius: 50%;\"></span>{{/if}}</div>\r\n\t\t\t\t\t\t\t\t\t\t\t<div style=\"font-size: 12px; color: #777; padding-bottom: 10px; text-align: center;\">{{LoadedData.SenderProfile.Age}} {{localized \"years\"}}</div>\r\n\t\t\t\t\t\t\t\t\t\t\t<div style=\"padding: 1px; border-radius: 25%; border: 2px solid #ED147D; width: 120px; height: 120px; display: inline-block;\">\r\n\t\t\t\t\t\t\t\t\t\t\t\t<img src=\"{{blur-photo LoadedData.SenderProfile.primaryPhotoUrl 10}}\" width=\"120px\" height=\"120px\" style=\"border-radius: 25%; object-fit: cover;\" />\r\n\t\t\t\t\t\t\t\t\t\t\t</div>\r\n\t\t\t\t\t\t\t\t\t\t</a>\r\n\t\t\t\t\t\t\t\t\t</td>\r\n\t\t\t\t\t\t\t\t\t<td>\r\n\t\t\t\t\t\t\t\t\t\t<table>\r\n\t\t\t\t\t\t\t\t\t\t\t<tr>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<td align=\"center\">\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t<a href={{LocalVars.ctaURL}}>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<div style=\"font-weight: 600;padding: 0px 50px\">{{localized \"oneWordTransforYourDay\"}}</div>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<div style=\"padding: 0px 50px\">{{localized \"YouMightRemember\"}}</div>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t</a>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t<tr>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<td align=\"center\" style=\"padding: 10px 30px 0px 30px\">\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t{{content-block \"content.pillCTA\" ctaColor=\"#ED147D\" ctaTextColor=\"#FFFFFF\" CTAFontSize=\"16\" CTAHeight=\"40\" CTAWidth=\"100%\" ctaText=(localized \"replyNow\") ctaImage=(image-content-url \"CtaReply\") CTAUrl=(LocalVars.ctaURL) }}\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t</td>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t</tr>\r\n\t\t\t\t\t\t\t\t\t\t\t\t</td>\r\n\t\t\t\t\t\t\t\t\t\t\t</tr>\r\n\t\t\t\t\t\t\t\t\t\t</table>\r\n\t\t\t\t\t\t\t\t\t</td>\r\n\t\t\t\t\t\t\t\t</tr>\r\n\t\t\t\t\t\t\t</table>\r\n\t\t\t\t\t\t</td>\r\n\t\t\t\t\t</tr>\r\n\t\t\t\t</table>\r\n\t\t\t</td>\r\n\t\t</tr>\r\n\r\n\t{{/inline}}\r\n\r\n{{/content-layout}}",
+      "localizedContents": {
+        "de": {
+          "oneWordTransforYourDay": "Ein einziges Wort kann Ihren Tag verändern...",
+          "YouMightRemember": "Vielleicht werden Sie sich noch lange an diese Nachricht erinnern ;)",
+          "messageReceived": "{{String.Append LoadedData.SenderProfile.Handle \" hat Ihnen geschrieben\"}}",
+          "replyNow": "Jetzt antworten",
+          "subject": "{{String.Append LoadedData.SenderProfile.Handle \" hat Ihnen gerade geschrieben 💌  Was werden Sie antworten?\"}}",
+          "years": "Jahre"
+        }
+      }
+    }
+  }
+}
