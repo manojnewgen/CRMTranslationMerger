@@ -499,25 +499,23 @@
         return null;
     }
 
-    private async Task<Dictionary<string, string>> ConvertBatchWithAi(Dictionary<string, string> texts)
+    private Task<Dictionary<string, string>> ConvertBatchWithAi(Dictionary<string, string> texts)
     {
         try
         {
-            Console.WriteLine($"Sending {texts.Count} texts to batch API...");
+            Console.WriteLine($"🚀 CLIENT-SIDE: Converting {texts.Count} texts using pattern matching...");
             
-            var response = await Http.PostAsJsonAsync("/api/convert-batch", texts);
-            response.EnsureSuccessStatusCode();
+            var converter = new Services.PlaceholderConverter();
+            var result = converter.ConvertBatch(texts);
             
-            var result = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+            Console.WriteLine($"✅ CLIENT-SIDE: Conversion complete!");
             
-            Console.WriteLine($"Received {result?.Count ?? 0} converted texts from API");
-            
-            return result ?? texts; // Fallback to original if null
+            return Task.FromResult(result);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Batch AI conversion error: {ex.Message}");
-            return texts; // Return originals on error
+            Console.WriteLine($"❌ CLIENT-SIDE conversion error: {ex.Message}");
+            return Task.FromResult(texts); // Return originals on error
         }
     }
 
