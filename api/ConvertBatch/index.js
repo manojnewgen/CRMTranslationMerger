@@ -370,11 +370,15 @@ INSTRUCTIONS:
         }
     }
     
-    return `You are an expert Handlebars template converter for a CRM email system. Your task is to convert text with placeholders into valid Handlebars syntax.
+    return `You are an expert Handlebars template converter for a CRM email system. Your task is to convert text with placeholders AND pseudocode conditionals into valid Handlebars syntax.
 
 AVAILABLE VARIABLES:
 - LoadedData.SenderProfile.Handle (sender's name/username)
 - LoadedData.SenderProfile.Age (sender's age)
+- LoadedData.SenderProfile.SiteCode (sender's site code, e.g., "43")
+- LoadedData.SenderProfile.PayingStatus (sender's payment status, e.g., "NOPAY", "PAID")
+- LoadedData.SenderProfile.Height (sender's height)
+- LoadedData.SenderProfile.SmokerStatus (sender's smoking status)
 - LoadedData.RecipientProfile.Handle (recipient's name/username)
 - LoadedData.RecipientProfile.Age (recipient's age)
 - LoadedData.TimeAgo (relative time, e.g., '2 hours ago')
@@ -388,37 +392,48 @@ AVAILABLE HELPER FUNCTIONS:
 
 CONVERSION RULES:
 
-1. Single placeholder alone:
+1. PSEUDOCODE CONDITIONALS - Convert to Handlebars:
+   Input: IF sender site code == 43 ... ELSE ...
+   Output: {{#if (String.Equal (Object.ToString LoadedData.SenderProfile.SiteCode) "43")}} ... {{else}} ... {{/if}}
+   
+   Input: AND paying Status == 'NOPAY' ...
+   Output: {{#if (String.Equal LoadedData.SenderProfile.PayingStatus "NOPAY")}} ... {{/if}}
+   
+   Example full conversion:
+   Input:
+   ```
+   IF sender site code == 43
+   {
+   AND paying Status == 'NOPAY' Someone likes you
+   ELSE <sender name> likes you
+   }
+   ELSE 💗 <sender name> is interested. Is it mutual?
+   ```
+   
+   Output:
+   ```
+   {{#if (String.Equal (Object.ToString LoadedData.SenderProfile.SiteCode) "43")}}
+   {{#if (String.Equal LoadedData.SenderProfile.PayingStatus "NOPAY")}}Someone likes you{{else}}{{LoadedData.SenderProfile.Handle}} likes you{{/if}}
+   {{else}}💗 {{LoadedData.SenderProfile.Handle}} is interested. Is it mutual?{{/if}}
+   ```
+
+2. Single placeholder alone:
    {{variable}}
-   Example: [Sender name] → {{LoadedData.SenderProfile.Handle}}
+   Example: <sender name> → {{LoadedData.SenderProfile.Handle}}
 
-2. Multiple parts (text + placeholders):
+3. Multiple parts (text + placeholders):
    {{String.Concat "text" variable "text"}}
-   Example: Hi [Sender name], welcome! → {{String.Concat "Hi " LoadedData.SenderProfile.Handle ", welcome!"}}
+   Example: Hi <sender name>, welcome! → {{String.Concat "Hi " LoadedData.SenderProfile.Handle ", welcome!"}}
 
-3. Conditionals with gender or other conditions:
-   {{#if (String.Equal (Object.ToString localVars.gender) "Female")}} her {{else}} him {{/if}}
-   Example: Message [Sender name]. Talk to [Gender:her/him] → 
-   {{String.Concat "Message " LoadedData.SenderProfile.Handle ". Talk to " (if (String.Equal (Object.ToString localVars.gender) "Female") "her" "him")}}
-
-4. Complex conditionals in text:
-   When text has gender-specific words like "him/her", "his/hers", convert to:
-   {{#if (String.Equal (Object.ToString localVars.gender) "Female")}} her {{else}} him {{/if}}
-
-5. Nested conditionals:
-   Preserve exact Handlebars conditional structure with proper spacing
-
-6. Email addresses with variables:
-   [Sender name]@domain.com → {{LoadedData.SenderProfile.Handle}}@domain.com
-
-7. Preserve existing Handlebars:
+4. Preserve existing Handlebars:
    If input already contains valid Handlebars expressions, keep them exactly as-is
 
-CRITICAL RULES - DO NOT VIOLATE:
-- ❌ DO NOT add any logic, conditionals, or if/else statements that weren't in the original text
-- ❌ DO NOT change the wording or structure of the text
-- ❌ DO NOT copy logic from the JSON context examples
-- ✅ ONLY replace placeholders with their Handlebars equivalents
+CRITICAL RULES:
+- ✅ Convert IF/ELSE/AND pseudocode to proper Handlebars {{#if}} blocks
+- ✅ Convert placeholders: <sender name> → {{LoadedData.SenderProfile.Handle}}
+- ✅ Convert placeholders: <sender age> → {{LoadedData.SenderProfile.Age}}
+- ✅ Convert placeholders: <sender height> → {{LoadedData.SenderProfile.Height}}
+- ✅ Convert placeholders: <sender smoker status> → {{LoadedData.SenderProfile.SmokerStatus}}
 - ✅ Keep the exact same text, just swap [Placeholder] → {{Variable}}
 - Preserve exact spacing and punctuation from original text
 - Escape quotes inside strings with \\"
