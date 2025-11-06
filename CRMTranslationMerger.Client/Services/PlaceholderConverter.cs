@@ -6,12 +6,21 @@ public class PlaceholderConverter
 {
     private readonly Dictionary<string, string> _placeholderMappings = new(StringComparer.OrdinalIgnoreCase)
     {
+        // Support both [] and <> bracket formats
         { "[Sender name]", "LoadedData.SenderProfile.Handle" },
+        { "<sender name>", "LoadedData.SenderProfile.Handle" },
         { "[Sender age]", "LoadedData.SenderProfile.Age" },
+        { "<sender age>", "LoadedData.SenderProfile.Age" },
+        { "[Sender height]", "LoadedData.SenderProfile.Height" },
+        { "<sender height>", "LoadedData.SenderProfile.Height" },
+        { "[Sender smoker status]", "LoadedData.SenderProfile.SmokerStatus" },
+        { "<sender smoker status>", "LoadedData.SenderProfile.SmokerStatus" },
         { "[TimeAgo]", "LoadedData.TimeAgo" },
         { "[Time]", "LoadedData.Time" },
         { "[Recipient name]", "LoadedData.RecipientProfile.Handle" },
-        { "[Recipient age]", "LoadedData.RecipientProfile.Age" }
+        { "<recipient name>", "LoadedData.RecipientProfile.Handle" },
+        { "[Recipient age]", "LoadedData.RecipientProfile.Age" },
+        { "<recipient age>", "LoadedData.RecipientProfile.Age" }
     };
 
     // Store detected patterns per translation key (e.g., "subject" -> "String.Append")
@@ -99,7 +108,8 @@ public class PlaceholderConverter
         // BEST EFFORT REPAIR: Fix common malformed placeholder issues
         text = RepairMalformedPlaceholders(text);
 
-        var placeholderPattern = @"\[([^\]]+)\]";
+        // Match both [Placeholder] and <placeholder> formats
+        var placeholderPattern = @"(\[([^\]]+)\]|<([^>]+)>)";
         var matches = Regex.Matches(text, placeholderPattern);
 
         if (matches.Count == 0)
