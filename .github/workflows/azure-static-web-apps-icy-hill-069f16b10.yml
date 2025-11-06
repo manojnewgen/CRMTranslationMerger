@@ -32,9 +32,9 @@ jobs:
           action: "upload"
           ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
           # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
-          app_location: "/CRMTranslationMerger.Client/wwwroot" # Pre-built Blazor WASM files
+          app_location: "/CRMTranslationMerger.Client" # App source code
           api_location: "/api" # Azure Functions API (Node.js)
-          skip_app_build: true # Skip build, use pre-built files
+          output_location: "wwwroot" # Blazor WASM output
           ###### End of Repository/Build Configurations ######
 
   close_pull_request_job:
