@@ -193,83 +193,6 @@
             </label>
         </div>
 
-        @if (conversionMode == "ai" || conversionMode == "hybrid")
-        {
-            <div class="ai-config">
-                <h3>AI Configuration</h3>
-                
-                <div class="ai-info" style="background: #e3f2fd; border-left: 4px solid #2196f3; padding: 12px; margin-bottom: 16px;">
-                    <span class="info-icon">✅</span>
-                    <div>
-                        <strong>API Key Configured:</strong> The OpenAI API key is already configured on the server. 
-                        You can optionally provide your own key below if you prefer to use your personal API key.
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="apiKey">
-                        🔑 API Key
-                        <span style="color: #666; font-weight: normal;">(Optional - server key will be used if not provided)</span>
-                    </label>
-                    <input type="password" 
-                           id="apiKey" 
-                           @bind="apiKey" 
-                           placeholder="sk-... (optional, leave empty to use server key)"
-                           class="input-field" />
-                    <small class="help-text">Your API key is never stored, only used for this session</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="provider">Provider</label>
-                    <select id="provider" @bind="aiProvider" class="input-field">
-                        <option value="openai">OpenAI</option>
-                        <option value="azure">Azure OpenAI</option>
-                    </select>
-                </div>
-
-                @if (aiProvider == "openai")
-                {
-                    <div class="form-group">
-                        <label for="model">Model</label>
-                        <select id="model" @bind="aiModel" class="input-field">
-                            <option value="gpt-4o">GPT-4o (Recommended)</option>
-                            <option value="gpt-4o-mini">GPT-4o Mini (Faster, cheaper)</option>
-                            <option value="gpt-4-turbo">GPT-4 Turbo</option>
-                            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                        </select>
-                    </div>
-                }
-                else
-                {
-                    <div class="form-group">
-                        <label for="azureEndpoint">
-                            Azure Endpoint
-                            <span class="required">*</span>
-                        </label>
-                        <input type="text" 
-                               id="azureEndpoint" 
-                               @bind="azureEndpoint" 
-                               placeholder="https://your-resource.openai.azure.com/openai/deployments/your-deployment/chat/completions?api-version=2024-02-01"
-                               class="input-field" />
-                    </div>
-                }
-
-                <div class="ai-info">
-                    <span class="info-icon">ℹ️</span>
-                    <div>
-                        <strong>Why AI?</strong> Handles complex scenarios like:
-                        <ul>
-                            <li>Conditional logic (if/else statements)</li>
-                            <li>Loops and iterations</li>
-                            <li>Nested expressions</li>
-                            <li>Context-dependent conversions</li>
-                            <li>Complex sentence structures</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        }
-        
         <label class="checkbox-option">
             <input type="checkbox" @bind="showPreview" />
             Show conversion preview before final merge
@@ -349,8 +272,7 @@
     private string? valueColumn;
 
     private bool CanMerge => !string.IsNullOrEmpty(jsonContent) && 
-                             !string.IsNullOrEmpty(excelDataJson) &&
-                             (conversionMode == "pattern" || !string.IsNullOrEmpty(apiKey));
+                             !string.IsNullOrEmpty(excelDataJson);
 
     private class MergeStats
     {
