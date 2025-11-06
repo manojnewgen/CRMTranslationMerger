@@ -1,0 +1,1 @@
+dotnet publish CRMTranslationMerger.Client/CRMTranslationMerger.Client.csproj -c Release -o /tmp/build
