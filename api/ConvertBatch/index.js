@@ -145,6 +145,7 @@ function isComplexText(text) {
     
     const placeholderCount = (text.match(/(\[([^\]]+)\]|<([^>]+)>)/g) || []).length;
     const hasConditionals = /\b(if|else|unless)\b/i.test(text);
+    const hasPseudocode = /\b(IF|ELSE|AND)\b/.test(text); // Detect uppercase pseudocode
     const hasLoops = /\b(each|for|loop)\b/i.test(text);
     const hasMultipleSentences = text.split(/[.!?]/).length > 2;
     const hasNestedBrackets = text.includes('[[') || /\[([^\]]*\[)/.test(text);
@@ -154,6 +155,7 @@ function isComplexText(text) {
     return hasHandlebars ||
            hasHelperFunctions ||
            hasGenderConditions ||
+           hasPseudocode ||  // Add pseudocode detection
            (placeholderCount > 2 && text.length > 50) || 
            hasConditionals || 
            hasLoops || 
