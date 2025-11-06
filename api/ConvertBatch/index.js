@@ -83,14 +83,22 @@ module.exports = async function (context, req) {
             }
         }
 
-        // Pattern matching mappings
+        // Pattern matching mappings (support both <> and [] formats)
         const placeholderMappings = {
             '[Sender name]': 'LoadedData.SenderProfile.Handle',
+            '<sender name>': 'LoadedData.SenderProfile.Handle',
             '[Sender age]': 'LoadedData.SenderProfile.Age',
+            '<sender age>': 'LoadedData.SenderProfile.Age',
+            '[Sender height]': 'LoadedData.SenderProfile.Height',
+            '<sender height>': 'LoadedData.SenderProfile.Height',
+            '[Sender smoker status]': 'LoadedData.SenderProfile.SmokerStatus',
+            '<sender smoker status>': 'LoadedData.SenderProfile.SmokerStatus',
             '[TimeAgo]': 'LoadedData.TimeAgo',
             '[Time]': 'LoadedData.Time',
             '[Recipient name]': 'LoadedData.RecipientProfile.Handle',
-            '[Recipient age]': 'LoadedData.RecipientProfile.Age'
+            '<recipient name>': 'LoadedData.RecipientProfile.Handle',
+            '[Recipient age]': 'LoadedData.RecipientProfile.Age',
+            '<recipient age>': 'LoadedData.RecipientProfile.Age'
         };
 
         const results = {};
@@ -135,7 +143,7 @@ function isComplexText(text) {
     // Already contains Handlebars - needs AI to preserve/enhance
     const hasHandlebars = text.includes('{{') && text.includes('}}');
     
-    const placeholderCount = (text.match(/\[([^\]]+)\]/g) || []).length;
+    const placeholderCount = (text.match(/(\[([^\]]+)\]|<([^>]+)>)/g) || []).length;
     const hasConditionals = /\b(if|else|unless)\b/i.test(text);
     const hasLoops = /\b(each|for|loop)\b/i.test(text);
     const hasMultipleSentences = text.split(/[.!?]/).length > 2;
@@ -168,7 +176,8 @@ function convertWithPatterns(text, mappings, context) {
     // Auto-repair malformed placeholders
     text = repairMalformedPlaceholders(text, mappings, context);
 
-    const placeholderPattern = /\[([^\]]+)\]/g;
+    // Match both [Placeholder] and <placeholder> formats
+    const placeholderPattern = /(\[([^\]]+)\]|<([^>]+)>)/g;
     const matches = [...text.matchAll(placeholderPattern)];
 
     if (matches.length === 0) return text;
@@ -405,7 +414,12 @@ CONVERSION RULES:
 7. Preserve existing Handlebars:
    If input already contains valid Handlebars expressions, keep them exactly as-is
 
-IMPORTANT RULES:
+CRITICAL RULES - DO NOT VIOLATE:
+- ❌ DO NOT add any logic, conditionals, or if/else statements that weren't in the original text
+- ❌ DO NOT change the wording or structure of the text
+- ❌ DO NOT copy logic from the JSON context examples
+- ✅ ONLY replace placeholders with their Handlebars equivalents
+- ✅ Keep the exact same text, just swap [Placeholder] → {{Variable}}
 - Preserve exact spacing and punctuation from original text
 - Escape quotes inside strings with \\"
 - Keep exact capitalization of helper functions (String.Concat, String.Equal, Object.ToString)
@@ -418,6 +432,7 @@ OUTPUT REQUIREMENTS:
 - Return ONLY the converted Handlebars expression
 - No explanations, no markdown, no extra text
 - Must be valid Handlebars syntax
+- DO NOT add logic that wasn't in the input text
 - Preserve any existing Handlebars expressions exactly`;
 }
 
@@ -425,13 +440,27 @@ OUTPUT REQUIREMENTS:
  * Builds user prompt
  */
 function buildUserPrompt(text) {
-    return `Convert this text to Handlebars syntax:
+    return `Convert this text to Handlebars syntax by ONLY replacing placeholders.
 
 Input text: "${text}"
 
-Known placeholders: [Sender name], [Sender age], [Recipient name], [Recipient age], [TimeAgo], [Time]
+Known placeholders to convert:
+- <sender name> OR [Sender name] → LoadedData.SenderProfile.Handle
+- <sender age> OR [Sender age] → LoadedData.SenderProfile.Age  
+- <sender height> OR [Sender height] → LoadedData.SenderProfile.Height
+- <sender smoker status> OR [Sender smoker status] → LoadedData.SenderProfile.SmokerStatus
+- [Recipient name] → LoadedData.RecipientProfile.Handle
+- [Recipient age] → LoadedData.RecipientProfile.Age
+- [TimeAgo] → LoadedData.TimeAgo
+- [Time] → LoadedData.Time
 
-Convert and return ONLY the Handlebars expression, nothing else.`;
+CRITICAL: 
+- DO NOT add any if/else logic or conditionals
+- DO NOT change the text content
+- ONLY replace the placeholders with their Handlebars variables
+- Keep everything else exactly as-is
+
+Return ONLY the converted Handlebars expression.`;
 }
 
 /**
