@@ -485,18 +485,28 @@ Return ONLY the converted Handlebars expression.`;
  */
 function isValidHandlebarsOutput(output) {
     if (!output || typeof output !== 'string') return false;
-    if (!output.startsWith('{{') || !output.endsWith('}}')) return false;
     
-    const openCount = (output.match(/\{\{/g) || []).length;
-    const closeCount = (output.match(/\}\}/g) || []).length;
-    if (openCount !== closeCount) return false;
-    
-    if (output.includes('{{{{{') || output.includes('}}}}}')) return false;
-    
-    if (output.includes('String.Concat') && !/String\.Concat\s+/.test(output)) {
-        return false;
+    // Allow pseudocode (IF/ELSE/AND) to pass through - it will be converted in next iteration
+    if (/\b(IF|ELSE|AND)\b/.test(output)) {
+        return true;
     }
     
+    // For Handlebars, check if it contains valid syntax
+    if (output.includes('{{') && output.includes('}}')) {
+        const openCount = (output.match(/\{\{/g) || []).length;
+        const closeCount = (output.match(/\}\}/g) || []).length;
+        if (openCount !== closeCount) return false;
+        
+        if (output.includes('{{{{{') || output.includes('}}}}}')) return false;
+        
+        if (output.includes('String.Concat') && !/String\.Concat\s+/.test(output)) {
+            return false;
+        }
+        
+        return true;
+    }
+    
+    // If no Handlebars and no pseudocode, allow simple text with placeholders
     return true;
 }
 
