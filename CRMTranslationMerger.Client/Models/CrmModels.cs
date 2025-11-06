@@ -2,17 +2,17 @@ namespace CRMTranslationMerger.Client.Models;
 
 public class CrmDocument
 {
-    public required ContentDocWrapper ContentDoc { get; set; }
+    public ContentDocWrapper? ContentDoc { get; set; }
 }
 
 public class ContentDocWrapper
 {
-    public required ContentData Content { get; set; }
+    public ContentData? Content { get; set; }
 }
 
 public class ContentData
 {
-    public required Dictionary<string, Dictionary<string, string>> LocalizedContents { get; set; }
+    public Dictionary<string, Dictionary<string, string>>? LocalizedContents { get; set; }
 }
 
 public class AiRequest
