@@ -1,6 +1,53 @@
 # CRM Translation Merger - Blazor WebAssembly
 
-🚀 A complete Blazor WebAssembly application with server-side AI proxy for merging CRM email translations from Excel to JSON.
+🚀 A complete Blazor WebAssembly application deployed on Azure Static Web Apps with AI-powered placeholder conversion.
+
+## ✅ Production Deployment
+
+**Live URL**: https://icy-hill-069f16b10.3.azurestaticapps.net
+
+### Deployment Modes
+
+| Mode | Best For | Setup |
+|------|----------|-------|
+| **Development** | Testing, personal use | Users provide their own OpenAI API keys through UI |
+| **Production** | Shared organizational deployment | Azure Key Vault with Managed Identity |
+
+## 🚀 Quick Start
+
+### For End Users (No Setup Required)
+
+1. Visit the app: https://icy-hill-069f16b10.3.azurestaticapps.net
+2. Follow the 6-step on-screen guide
+3. Choose conversion mode:
+   - **Pattern Only**: Free, instant (for simple placeholders)
+   - **AI-Powered**: Intelligent conversion (handles complex scenarios)
+   - **Smart Hybrid**: Auto-detects complexity
+4. If using AI mode, provide your OpenAI API key
+5. Upload Excel file and download merged JSON
+
+### For Administrators (Production Deployment)
+
+Set up Azure Key Vault for centralized API key management:
+
+```powershell
+# Navigate to project root
+cd C:\CRM-19119\CRMTranslationMerger
+
+# Run automated setup (replace with your actual API key)
+.\setup-keyvault.ps1 -OpenAiApiKey "sk-your-actual-key-here"
+```
+
+This creates:
+- ✅ Azure Key Vault
+- ✅ Managed Identity on Static Web App
+- ✅ Secure secret storage
+- ✅ Environment variables
+- ✅ Access policies
+
+**Cost**: ~$0.03 per 10,000 operations (essentially free for normal usage)
+
+**Documentation**: See [SECURITY.md](SECURITY.md) for detailed setup and architecture
 
 ## ✅ What's Been Created
 
@@ -8,46 +55,44 @@
 ```
 CRMTranslationMerger/
 ├── CRMTranslationMerger.sln
-├── CRMTranslationMerger.Client/          (Blazor WASM)
-├── CRMTranslationMerger.Server/          (ASP.NET Core API)
-└── CRMTranslationMerger.Shared/          (Shared Models)
-    └── Models/
-        ├── AiRequest.cs                  ✅ Created
-        ├── AiResponse.cs                 ✅ Created
-        ├── LocalizedContent.cs           ✅ Created
-        └── MergeResult.cs                ✅ Created
+├── CRMTranslationMerger.Client/          (Blazor WASM - net8.0)
+│   ├── Pages/CrmMerge.razor             ✅ Complete UI with 6-step guide
+│   ├── Services/PlaceholderConverter.cs ✅ Client-side pattern matching
+│   └── wwwroot/
+│       ├── staticwebapp.config.json     ✅ Azure SWA routing
+│       └── excelInterop.js              ✅ Excel parsing via SheetJS
+├── api/                                  (Azure Functions - Node.js 18)
+│   ├── ConvertBatch/
+│   │   └── index.js                     ✅ AI conversion with Key Vault support
+│   ├── package.json                     ✅ Azure SDK dependencies
+│   └── local.settings.json              ✅ Node.js runtime config
+└── .github/workflows/
+    └── azure-static-web-apps-*.yml      ✅ CI/CD deployment
+
+### Shared Models (Reference - from original .NET architecture)
+- ✅ `Models/AiRequest.cs`
+- ✅ `Models/AiResponse.cs`
+- ✅ `Models/LocalizedContent.cs`
+- ✅ `Models/MergeResult.cs`
 ```
-
-### Server Files Created
-- ✅ `Services/OpenAiService.cs` - Complete AI proxy service
-
-## 🎯 Quick Start
-
-### 1. Open in VS Code
-```powershell
-code c:\CRM-19119\CRMTranslationMerger\CRMTranslationMerger.sln
-```
-
-### 2. Follow the detailed setup in:
-📄 **[BLAZOR_SETUP_INSTRUCTIONS.md](../BLAZOR_SETUP_INSTRUCTIONS.md)**
-
-This file contains:
-- Target framework fixes (net7.0 → net9.0)
-- Complete Program.cs for Server
-- All Client files (Merge.razor, index.html, app.css, excelInterop.js)
-- Configuration files
-- Build and run commands
 
 ## 🔧 Key Features
 
-### ✅ Solved CORS Issue
-- Server-side AI proxy eliminates browser CORS restrictions
-- API keys stored securely on server, never exposed to client
+### ✅ Enterprise-Grade Security
+- **Development Mode**: User-provided API keys (never stored, TLS encrypted)
+- **Production Mode**: Azure Key Vault with Managed Identity
+- **Key Caching**: 1-hour TTL reduces Key Vault calls
+- **Audit Logs**: Track API access through Azure Monitor
+- **Zero Credentials**: Managed Identity eliminates credential management
 
-### ✅ Complete Architecture
-- **Client**: Blazor WebAssembly for UI
-- **Server**: ASP.NET Core API with AI proxy endpoint
-- **Shared**: DTOs for type-safe communication
+### ✅ Intelligent Conversion
+- **Pattern Matching**: Instant, free conversion for simple placeholders
+- **AI-Powered**: Handles complex scenarios:
+  - Gender conditionals: `him/her` → `{{#if (String.Equal gender "Female")}} her {{else}} him {{/if}}`
+  - Helper functions: `String.Concat`, `String.Equal`, `Object.ToString`
+  - Existing Handlebars preservation
+  - Nested expressions
+- **Smart Detection**: Auto-routes complex texts to AI
 
 ### ✅ AI Integration
 - OpenAI GPT-4o Mini integration
