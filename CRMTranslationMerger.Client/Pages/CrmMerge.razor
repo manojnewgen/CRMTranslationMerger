@@ -293,12 +293,8 @@
             using var reader = new StreamReader(stream);
             jsonContent = await reader.ReadToEndAsync();
 
-            // Validate JSON structure
-            var doc = JsonDocument.Parse(jsonContent);
-            if (!doc.RootElement.TryGetProperty("contentDoc", out _))
-            {
-                throw new Exception("Invalid CRM JSON structure - missing 'contentDoc'");
-            }
+            // Validate it's valid JSON (but don't enforce structure - AI can handle any format)
+            JsonDocument.Parse(jsonContent); // Just check if it's valid JSON
 
             statusMessage = $"✓ CRM JSON file loaded: {jsonFileName}";
             hasError = false;
@@ -391,10 +387,26 @@
         try
         {
             // Parse CRM JSON
-            var crmDoc = JsonSerializer.Deserialize<CrmDocument>(jsonContent!);
-            if (crmDoc?.ContentDoc?.Content?.LocalizedContents == null)
+            // Try to parse as CrmDocument structure, but be flexible
+            CrmDocument? crmDoc = null;
+            Dictionary<string, Dictionary<string, string>>? localizedContents = null;
+            
+            try
             {
-                throw new Exception("Invalid CRM JSON structure");
+                crmDoc = JsonSerializer.Deserialize<CrmDocument>(jsonContent!);
+                localizedContents = crmDoc?.ContentDoc?.Content?.LocalizedContents;
+            }
+            catch
+            {
+                // If structure doesn't match, create a new one
+                localizedContents = new Dictionary<string, Dictionary<string, string>>();
+            }
+            
+            // If no valid structure found, initialize empty
+            if (localizedContents == null)
+            {
+                localizedContents = new Dictionary<string, Dictionary<string, string>>();
+                statusMessage = "ℹ️ JSON doesn't match CRM structure - creating new localizedContents structure";
             }
 
             // Parse Excel data
@@ -404,7 +416,6 @@
                 throw new Exception("Failed to parse Excel data");
             }
 
-            var localizedContents = crmDoc.ContentDoc.Content.LocalizedContents;
             var addedCount = 0;
             var updatedCount = 0;
             var languagesSet = new HashSet<string>(localizedContents.Keys);
@@ -609,7 +620,27 @@
                 WriteIndented = true,
                 Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
             };
-            mergedJsonResult = JsonSerializer.Serialize(crmDoc, options);
+            
+            // If we had a valid CrmDocument structure, use it; otherwise create a new one
+            if (crmDoc?.ContentDoc?.Content != null)
+            {
+                mergedJsonResult = JsonSerializer.Serialize(crmDoc, options);
+            }
+            else
+            {
+                // Create new CRM structure with the merged translations
+                var newCrmDoc = new CrmDocument
+                {
+                    ContentDoc = new ContentDocWrapper
+                    {
+                        Content = new ContentData
+                        {
+                            LocalizedContents = localizedContents
+                        }
+                    }
+                };
+                mergedJsonResult = JsonSerializer.Serialize(newCrmDoc, options);
+            }
 
             mergeStats = new MergeStats
             {
