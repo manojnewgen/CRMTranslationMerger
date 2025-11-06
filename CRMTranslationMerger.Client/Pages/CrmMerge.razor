@@ -198,15 +198,23 @@
             <div class="ai-config">
                 <h3>AI Configuration</h3>
                 
+                <div class="ai-info" style="background: #e3f2fd; border-left: 4px solid #2196f3; padding: 12px; margin-bottom: 16px;">
+                    <span class="info-icon">✅</span>
+                    <div>
+                        <strong>API Key Configured:</strong> The OpenAI API key is already configured on the server. 
+                        You can optionally provide your own key below if you prefer to use your personal API key.
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label for="apiKey">
                         🔑 API Key
-                        <span class="required">*</span>
+                        <span style="color: #666; font-weight: normal;">(Optional - server key will be used if not provided)</span>
                     </label>
                     <input type="password" 
                            id="apiKey" 
                            @bind="apiKey" 
-                           placeholder="sk-... or your Azure OpenAI key"
+                           placeholder="sk-... (optional, leave empty to use server key)"
                            class="input-field" />
                     <small class="help-text">Your API key is never stored, only used for this session</small>
                 </div>
