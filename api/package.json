@@ -1,0 +1,11 @@
+{
+  "name": "crm-translation-merger-api",
+  "version": "1.0.0",
+  "description": "Azure Functions API for CRM Translation Merger - AI-powered placeholder conversion",
+  "scripts": {
+    "start": "func start",
+    "test": "echo \"No tests specified\""
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

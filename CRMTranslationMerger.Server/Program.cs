@@ -28,11 +28,26 @@ app.MapPost("/api/convert-placeholder", async (AiRequest request, OpenAiService 
 })
 .WithName("ConvertPlaceholder");
 
-// ENTERPRISE BATCH CONVERSION ENDPOINT (NEW!)
-// Processes ALL translations in one call - FAST, EFFICIENT, RELIABLE
-app.MapPost("/api/convert-batch", async (Dictionary<string, string> texts, OpenAiService aiService) =>
+// ENTERPRISE BATCH CONVERSION ENDPOINT - Supports AI-powered and pattern-only modes
+// Processes ALL translations in one call - INTELLIGENT, EFFICIENT, COMPREHENSIVE
+app.MapPost("/api/convert-batch", async (BatchConversionRequest request, OpenAiService aiService) =>
 {
-    var convertedTexts = await aiService.ConvertBatchAsync(texts);
+    var mode = request.Mode switch
+    {
+        "pattern" => OpenAiService.ConversionMode.PatternOnly,
+        "ai" => OpenAiService.ConversionMode.AiPowered,
+        "hybrid" => OpenAiService.ConversionMode.SmartHybrid,
+        _ => OpenAiService.ConversionMode.SmartHybrid
+    };
+    
+    var convertedTexts = await aiService.ConvertBatchAsync(
+        request.Texts,
+        mode,
+        request.ApiKey,
+        request.Endpoint,
+        request.Model
+    );
+    
     return Results.Ok(convertedTexts);
 })
 .WithName("ConvertBatch");
@@ -41,3 +56,12 @@ app.MapPost("/api/convert-batch", async (Dictionary<string, string> texts, OpenA
 app.MapFallbackToFile("index.html");
 
 app.Run();
+
+// Simple DTO for batch conversion request
+public record BatchConversionRequest(
+    Dictionary<string, string> Texts,
+    string Mode = "hybrid", // "pattern", "ai", or "hybrid"
+    string? ApiKey = null,
+    string? Endpoint = null,
+    string? Model = null
+);

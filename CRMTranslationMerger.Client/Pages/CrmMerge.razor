@@ -162,10 +162,109 @@
     </div>
 
     <div class="options-section">
-        <h2>2️⃣ Options</h2>
-        <label>
-            <input type="checkbox" @bind="useAiConversion" />
-            Use AI to convert Excel placeholders to Handlebars (e.g., [Sender name] → {{LoadedData.SenderProfile.Handle}})
+        <h2>2️⃣ Conversion Options</h2>
+        
+        <div class="conversion-mode-selector">
+            <label class="mode-option @(conversionMode == "pattern" ? "selected" : "")" @onclick="@(() => conversionMode = "pattern")">
+                <input type="radio" name="mode" checked="@(conversionMode == "pattern")" />
+                <div class="mode-content">
+                    <strong>📐 Pattern Only</strong>
+                    <p>Fast & Free - Handles simple placeholders only</p>
+                    <small>Best for: Basic replacements like [Sender name] → {{"{{"}}LoadedData.SenderProfile.Handle{{"}}"}}</small>
+                </div>
+            </label>
+
+            <label class="mode-option @(conversionMode == "ai" ? "selected" : "")" @onclick="@(() => conversionMode = "ai")">
+                <input type="radio" name="mode" checked="@(conversionMode == "ai")" />
+                <div class="mode-content">
+                    <strong>🤖 AI-Powered</strong>
+                    <p>Intelligent - Handles all edge cases</p>
+                    <small>Best for: Complex scenarios with conditionals, loops, nested expressions</small>
+                </div>
+            </label>
+
+            <label class="mode-option @(conversionMode == "hybrid" ? "selected" : "")" @onclick="@(() => conversionMode = "hybrid")">
+                <input type="radio" name="mode" checked="@(conversionMode == "hybrid")" />
+                <div class="mode-content">
+                    <strong>⚡ Smart Hybrid</strong>
+                    <p>Auto-detect complexity and use best approach</p>
+                    <small>Recommended: Uses pattern matching for simple cases, AI for complex ones</small>
+                </div>
+            </label>
+        </div>
+
+        @if (conversionMode == "ai" || conversionMode == "hybrid")
+        {
+            <div class="ai-config">
+                <h3>AI Configuration</h3>
+                
+                <div class="form-group">
+                    <label for="apiKey">
+                        🔑 API Key
+                        <span class="required">*</span>
+                    </label>
+                    <input type="password" 
+                           id="apiKey" 
+                           @bind="apiKey" 
+                           placeholder="sk-... or your Azure OpenAI key"
+                           class="input-field" />
+                    <small class="help-text">Your API key is never stored, only used for this session</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="provider">Provider</label>
+                    <select id="provider" @bind="aiProvider" class="input-field">
+                        <option value="openai">OpenAI</option>
+                        <option value="azure">Azure OpenAI</option>
+                    </select>
+                </div>
+
+                @if (aiProvider == "openai")
+                {
+                    <div class="form-group">
+                        <label for="model">Model</label>
+                        <select id="model" @bind="aiModel" class="input-field">
+                            <option value="gpt-4o">GPT-4o (Recommended)</option>
+                            <option value="gpt-4o-mini">GPT-4o Mini (Faster, cheaper)</option>
+                            <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                        </select>
+                    </div>
+                }
+                else
+                {
+                    <div class="form-group">
+                        <label for="azureEndpoint">
+                            Azure Endpoint
+                            <span class="required">*</span>
+                        </label>
+                        <input type="text" 
+                               id="azureEndpoint" 
+                               @bind="azureEndpoint" 
+                               placeholder="https://your-resource.openai.azure.com/openai/deployments/your-deployment/chat/completions?api-version=2024-02-01"
+                               class="input-field" />
+                    </div>
+                }
+
+                <div class="ai-info">
+                    <span class="info-icon">ℹ️</span>
+                    <div>
+                        <strong>Why AI?</strong> Handles complex scenarios like:
+                        <ul>
+                            <li>Conditional logic (if/else statements)</li>
+                            <li>Loops and iterations</li>
+                            <li>Nested expressions</li>
+                            <li>Context-dependent conversions</li>
+                            <li>Complex sentence structures</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        }
+        
+        <label class="checkbox-option">
+            <input type="checkbox" @bind="showPreview" />
+            Show conversion preview before final merge
         </label>
     </div>
 
@@ -224,7 +323,12 @@
     private string? excelFileName;
     private string? jsonContent;
     private string? excelDataJson;
-    private bool useAiConversion = true;
+    private string conversionMode = "hybrid"; // "pattern", "ai", or "hybrid"
+    private string? apiKey;
+    private string aiProvider = "openai"; // "openai" or "azure"
+    private string aiModel = "gpt-4o-mini";
+    private string? azureEndpoint;
+    private bool showPreview = false;
     private bool isProcessing = false;
     private string? statusMessage;
     private bool hasError = false;
@@ -236,7 +340,9 @@
     private string? keyColumn;
     private string? valueColumn;
 
-    private bool CanMerge => !string.IsNullOrEmpty(jsonContent) && !string.IsNullOrEmpty(excelDataJson);
+    private bool CanMerge => !string.IsNullOrEmpty(jsonContent) && 
+                             !string.IsNullOrEmpty(excelDataJson) &&
+                             (conversionMode == "pattern" || !string.IsNullOrEmpty(apiKey));
 
     private class MergeStats
     {
@@ -442,7 +548,7 @@
                 }
                 
                 // BATCH AI CONVERSION: Convert ALL texts at once (ENTERPRISE APPROACH)
-                if (useAiConversion)
+                if (conversionMode != "pattern" || true) // Always convert for consistency
                 {
                     try
                     {
@@ -508,19 +614,8 @@
                         var key = row[keyColumn!];
                         var value = row[valueColumn!];
 
-                        // Convert with AI if enabled
-                        if (useAiConversion && !string.IsNullOrEmpty(value))
-                        {
-                            try
-                            {
-                                value = await ConvertWithAi(value, localizedContents);
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"AI conversion failed for key '{key}' lang '{langCode}': {ex.Message}. Using original value.");
-                                // Continue with original value if AI fails
-                            }
-                        }
+                        // Note: Standard format conversion happens later in batch
+                        // Just store original values for now
 
                         // Add or update
                         if (langDict.ContainsKey(key))
@@ -534,6 +629,44 @@
                             addedCount++;
                         }
                     }
+                }
+                
+                // BATCH AI CONVERSION for standard format as well
+                try
+                {
+                    // Collect all texts from localizedContents
+                    var textsToConvert = new Dictionary<string, string>();
+                    foreach (var (langCode, langDict) in localizedContents)
+                    {
+                        foreach (var (key, value) in langDict)
+                        {
+                            var cellKey = $"{langCode}|{key}";
+                            textsToConvert[cellKey] = value;
+                        }
+                    }
+                    
+                    Console.WriteLine($"🚀 Batch converting {textsToConvert.Count} texts (standard format)...");
+                    var convertedTexts = await ConvertBatchWithAi(textsToConvert);
+                    Console.WriteLine($"✅ Batch conversion complete!");
+
+                    // Apply converted texts back
+                    foreach (var (cellKey, convertedText) in convertedTexts)
+                    {
+                        var parts = cellKey.Split('|');
+                        if (parts.Length == 2)
+                        {
+                            var langCode = parts[0];
+                            var key = parts[1];
+                            if (localizedContents.ContainsKey(langCode))
+                            {
+                                localizedContents[langCode][key] = convertedText;
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"❌ Batch AI conversion failed: {ex.Message}. Using original values.");
                 }
             }
 
@@ -622,23 +755,63 @@
         return null;
     }
 
-    private Task<Dictionary<string, string>> ConvertBatchWithAi(Dictionary<string, string> texts)
+    private async Task<Dictionary<string, string>> ConvertBatchWithAi(Dictionary<string, string> texts)
     {
         try
         {
-            Console.WriteLine($"🚀 CLIENT-SIDE: Converting {texts.Count} texts using pattern matching...");
+            Console.WriteLine($"🚀 Starting conversion of {texts.Count} texts using {conversionMode} mode...");
             
-            var converter = new Services.PlaceholderConverter();
-            var result = converter.ConvertBatch(texts);
-            
-            Console.WriteLine($"✅ CLIENT-SIDE: Conversion complete!");
-            
-            return Task.FromResult(result);
+            if (conversionMode == "pattern")
+            {
+                // Pure client-side pattern matching
+                Console.WriteLine("📐 Using client-side pattern matching (fast & free)");
+                var converter = new Services.PlaceholderConverter();
+                var result = converter.ConvertBatch(texts);
+                Console.WriteLine($"✅ Pattern matching complete!");
+                return result;
+            }
+            else
+            {
+                // Use server API for AI-powered or hybrid conversion
+                Console.WriteLine($"🤖 Calling server API for {conversionMode} conversion...");
+                
+                var requestBody = new
+                {
+                    Texts = texts,
+                    Mode = conversionMode,
+                    ApiKey = apiKey,
+                    Endpoint = aiProvider == "azure" ? azureEndpoint : null,
+                    Model = aiProvider == "openai" ? aiModel : null
+                };
+                
+                var json = JsonSerializer.Serialize(requestBody);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+                
+                var response = await Http.PostAsync("/api/convert-batch", content);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"❌ Server API error: {error}");
+                    Console.WriteLine("⚠️ Falling back to client-side pattern matching");
+                    
+                    // Fallback to pattern matching
+                    var converter = new Services.PlaceholderConverter();
+                    return converter.ConvertBatch(texts);
+                }
+                
+                var responseJson = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<Dictionary<string, string>>(responseJson);
+                
+                Console.WriteLine($"✅ Server conversion complete!");
+                return result ?? texts;
+            }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ CLIENT-SIDE conversion error: {ex.Message}");
-            return Task.FromResult(texts); // Return originals on error
+            Console.WriteLine($"❌ Conversion error: {ex.Message}");
+            Console.WriteLine("⚠️ Falling back to original texts");
+            return texts; // Return originals on error
         }
     }
 
