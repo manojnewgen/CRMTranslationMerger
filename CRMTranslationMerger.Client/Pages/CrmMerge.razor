@@ -742,7 +742,9 @@
                     Mode = conversionMode,
                     ApiKey = apiKey,
                     Endpoint = aiProvider == "azure" ? azureEndpoint : null,
-                    Model = aiProvider == "openai" ? aiModel : null
+                    Model = aiProvider == "openai" ? aiModel : null,
+                    JsonContext = jsonContent, // Send full JSON so AI can learn patterns
+                    ExcelContext = excelDataJson // Send Excel data for context
                 };
                 
                 var json = JsonSerializer.Serialize(requestBody);

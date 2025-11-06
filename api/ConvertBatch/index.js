@@ -54,7 +54,7 @@ module.exports = async function (context, req) {
     }
 
     try {
-        const { Texts, Mode = 'hybrid', ApiKey, Endpoint, Model } = req.body;
+        const { Texts, Mode = 'hybrid', ApiKey, Endpoint, Model, JsonContext, ExcelContext } = req.body;
 
         if (!Texts || typeof Texts !== 'object') {
             context.res.status = 400;
@@ -63,7 +63,7 @@ module.exports = async function (context, req) {
         }
 
         const mode = Mode.toLowerCase();
-        context.log(`Processing ${Object.keys(Texts).length} texts in ${mode} mode`);
+        context.log(`Processing ${Object.keys(Texts).length} texts in ${mode} mode with ${JsonContext ? 'JSON' : 'no'} context`);
 
         // Get API credentials
         // Priority: 1) User-provided key (for testing), 2) Azure Key Vault (production)
@@ -105,7 +105,7 @@ module.exports = async function (context, req) {
 
                 if (shouldUseAi && apiKey) {
                     context.log(`🤖 Using AI for complex text: ${text.substring(0, 50)}...`);
-                    converted = await convertWithAi(text, apiKey, apiEndpoint, apiModel, context);
+                    converted = await convertWithAi(text, apiKey, apiEndpoint, apiModel, context, JsonContext, ExcelContext);
                 } else {
                     context.log(`📐 Using pattern matching for: ${text.substring(0, 50)}...`);
                     converted = convertWithPatterns(text, placeholderMappings, context);
@@ -257,11 +257,11 @@ function repairMalformedPlaceholders(text, mappings, context) {
 /**
  * AI-powered conversion using OpenAI or Azure OpenAI
  */
-async function convertWithAi(text, apiKey, endpoint, model, context) {
+async function convertWithAi(text, apiKey, endpoint, model, context, jsonContext, excelContext) {
     const apiEndpoint = endpoint || 'https://api.openai.com/v1/chat/completions';
     const modelName = model || 'gpt-4o-mini';
 
-    const systemPrompt = buildSystemPrompt();
+    const systemPrompt = buildSystemPrompt(jsonContext, excelContext);
     const userPrompt = buildUserPrompt(text);
 
     const requestBody = JSON.stringify({
@@ -337,9 +337,30 @@ async function convertWithAi(text, apiKey, endpoint, model, context) {
 }
 
 /**
- * Builds comprehensive system prompt for AI
+ * Builds comprehensive system prompt for AI with JSON context
  */
-function buildSystemPrompt() {
+function buildSystemPrompt(jsonContext, excelContext) {
+    let contextAnalysis = '';
+    
+    if (jsonContext) {
+        try {
+            const json = JSON.parse(jsonContext);
+            const sample = JSON.stringify(json, null, 2).substring(0, 1000); // First 1000 chars for context
+            contextAnalysis = `\n\nEXISTING JSON STRUCTURE (learn from these patterns):
+${sample}
+...
+
+INSTRUCTIONS:
+- Study the existing JSON to understand naming patterns
+- See how placeholders are already converted (e.g., {{LoadedData.SenderProfile.Handle}})
+- Match the style and structure of existing conversions
+- Ensure consistency with existing keys and values
+`;
+        } catch (e) {
+            // Ignore parse errors
+        }
+    }
+    
     return `You are an expert Handlebars template converter for a CRM email system. Your task is to convert text with placeholders into valid Handlebars syntax.
 
 AVAILABLE VARIABLES:
@@ -390,6 +411,8 @@ IMPORTANT RULES:
 - Keep exact capitalization of helper functions (String.Concat, String.Equal, Object.ToString)
 - Maintain proper nesting depth for conditionals
 - If text already has valid Handlebars syntax, DO NOT change it
+
+${contextAnalysis}
 
 OUTPUT REQUIREMENTS:
 - Return ONLY the converted Handlebars expression
