@@ -2,34 +2,17 @@
  * Azure Function: ConvertBatch
  * Converts text placeholders to Handlebars expressions using AI or pattern matching
  * 
- * Security: Supports both App Settings (Free tier) and Azure Key Vault (Standard tier)
+ * Security: Supports App Settings (Free tier) and user-provided keys
+ * Note: Key Vault support requires @azure/identity and @azure/keyvault-secrets packages (Standard tier)
  */
 
 const https = require('https');
 const http = require('http');
 
-// Key Vault support (optional, requires Standard tier)
-let DefaultAzureCredential, SecretClient;
-try {
-    const identity = require('@azure/identity');
-    const keyVault = require('@azure/keyvault-secrets');
-    DefaultAzureCredential = identity.DefaultAzureCredential;
-    SecretClient = keyVault.SecretClient;
-} catch (e) {
-    // Key Vault packages not installed - will use app settings only
-}
-
-// Cache for API key
-let cachedApiKey = null;
-let kvClient = null;
-let lastKeyFetch = null;
-const KEY_CACHE_TTL_MS = 3600000; // 1 hour
-
 /**
  * Retrieves OpenAI API key from multiple sources (in priority order):
  * 1. User-provided key (via API request)
  * 2. Azure App Settings (OPENAI_API_KEY) - Works on Free tier
- * 3. Azure Key Vault (via Managed Identity) - Requires Standard tier
  */
 async function getOpenAiKey(userProvidedKey, context) {
     // Priority 1: User-provided key (for testing or personal use)
@@ -41,47 +24,14 @@ async function getOpenAiKey(userProvidedKey, context) {
     // Priority 2: App Settings (works on Free tier)
     const appSettingKey = process.env.OPENAI_API_KEY;
     if (appSettingKey && appSettingKey.startsWith('sk-')) {
-        context.log('Using API key from App Settings');
+        context.log('✅ Using API key from App Settings');
         return appSettingKey;
-    }
-
-    // Priority 3: Key Vault (requires Standard tier)
-    const keyVaultUrl = process.env.KEYVAULT_URL;
-    if (keyVaultUrl && DefaultAzureCredential && SecretClient) {
-        // Check cache (with TTL)
-        const now = Date.now();
-        if (cachedApiKey && lastKeyFetch && (now - lastKeyFetch) < KEY_CACHE_TTL_MS) {
-            context.log('Using cached Key Vault secret');
-            return cachedApiKey;
-        }
-
-        try {
-            // Initialize Key Vault client with Managed Identity
-            if (!kvClient) {
-                context.log('Initializing Key Vault client with Managed Identity');
-                const credential = new DefaultAzureCredential();
-                kvClient = new SecretClient(keyVaultUrl, credential);
-            }
-
-            const secretName = process.env.OPENAI_SECRET_NAME || 'OPENAI-API-KEY';
-            context.log(`Fetching secret '${secretName}' from Key Vault`);
-            
-            const secret = await kvClient.getSecret(secretName);
-            cachedApiKey = secret.value;
-            lastKeyFetch = now;
-            
-            context.log('✅ Successfully retrieved API key from Key Vault');
-            return cachedApiKey;
-        } catch (error) {
-            context.log.error('❌ Failed to retrieve key from Key Vault:', error.message);
-        }
     }
 
     // No key found from any source
     throw new Error('No API key available. Please either:\n' +
                     '1. Provide API key via UI, OR\n' +
-                    '2. Configure OPENAI_API_KEY in App Settings (Free tier), OR\n' +
-                    '3. Set up Azure Key Vault (requires Standard tier)');
+                    '2. Configure OPENAI_API_KEY in App Settings');
 }
 
 module.exports = async function (context, req) {
