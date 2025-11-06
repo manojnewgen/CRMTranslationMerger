@@ -86,13 +86,21 @@ module.exports = async function (context, req) {
  * Determines if text is complex enough to require AI
  */
 function isComplexText(text) {
+    // Already contains Handlebars - needs AI to preserve/enhance
+    const hasHandlebars = text.includes('{{') && text.includes('}}');
+    
     const placeholderCount = (text.match(/\[([^\]]+)\]/g) || []).length;
     const hasConditionals = /\b(if|else|unless)\b/i.test(text);
     const hasLoops = /\b(each|for|loop)\b/i.test(text);
     const hasMultipleSentences = text.split(/[.!?]/).length > 2;
     const hasNestedBrackets = text.includes('[[') || /\[([^\]]*\[)/.test(text);
+    const hasHelperFunctions = /String\.(Concat|Equal|Append)|Object\.ToString/.test(text);
+    const hasGenderConditions = /(him|her|his|hers)\/(him|her|his|hers)/.test(text);
     
-    return (placeholderCount > 2 && text.length > 50) || 
+    return hasHandlebars ||
+           hasHelperFunctions ||
+           hasGenderConditions ||
+           (placeholderCount > 2 && text.length > 50) || 
            hasConditionals || 
            hasLoops || 
            hasMultipleSentences ||
@@ -104,6 +112,12 @@ function isComplexText(text) {
  */
 function convertWithPatterns(text, mappings, context) {
     if (!text) return text;
+
+    // If text already contains Handlebars expressions, return as-is
+    if (text.includes('{{') && text.includes('}}')) {
+        context.log('Text already contains Handlebars, preserving as-is');
+        return text;
+    }
 
     // Auto-repair malformed placeholders
     text = repairMalformedPlaceholders(text, mappings, context);
@@ -283,29 +297,59 @@ function buildSystemPrompt() {
     return `You are an expert Handlebars template converter for a CRM email system. Your task is to convert text with placeholders into valid Handlebars syntax.
 
 AVAILABLE VARIABLES:
-- LoadedData.SenderProfile.Handle (sender's name)
+- LoadedData.SenderProfile.Handle (sender's name/username)
 - LoadedData.SenderProfile.Age (sender's age)
-- LoadedData.RecipientProfile.Handle (recipient's name)
+- LoadedData.RecipientProfile.Handle (recipient's name/username)
 - LoadedData.RecipientProfile.Age (recipient's age)
 - LoadedData.TimeAgo (relative time, e.g., '2 hours ago')
 - LoadedData.Time (absolute time)
+- localVars.gender (gender variable for conditionals)
+
+AVAILABLE HELPER FUNCTIONS:
+- String.Concat - Concatenate strings and variables
+- String.Equal - Compare two strings
+- Object.ToString - Convert object to string
 
 CONVERSION RULES:
-1. Single placeholder alone: {{variable}}
+
+1. Single placeholder alone:
+   {{variable}}
    Example: [Sender name] → {{LoadedData.SenderProfile.Handle}}
 
-2. Multiple parts (text + placeholders): {{String.Concat "text" variable "text"}}
+2. Multiple parts (text + placeholders):
+   {{String.Concat "text" variable "text"}}
    Example: Hi [Sender name], welcome! → {{String.Concat "Hi " LoadedData.SenderProfile.Handle ", welcome!"}}
 
-3. Conditionals: {{#if condition}}...{{else}}...{{/if}}
-4. Loops: {{#each items}}...{{/each}}
-5. Escape quotes: Use \\" for quotes inside strings
-6. Preserve original text formatting, punctuation, and spacing
+3. Conditionals with gender or other conditions:
+   {{#if (String.Equal (Object.ToString localVars.gender) "Female")}} her {{else}} him {{/if}}
+   Example: Message [Sender name]. Talk to [Gender:her/him] → 
+   {{String.Concat "Message " LoadedData.SenderProfile.Handle ". Talk to " (if (String.Equal (Object.ToString localVars.gender) "Female") "her" "him")}}
+
+4. Complex conditionals in text:
+   When text has gender-specific words like "him/her", "his/hers", convert to:
+   {{#if (String.Equal (Object.ToString localVars.gender) "Female")}} her {{else}} him {{/if}}
+
+5. Nested conditionals:
+   Preserve exact Handlebars conditional structure with proper spacing
+
+6. Email addresses with variables:
+   [Sender name]@domain.com → {{LoadedData.SenderProfile.Handle}}@domain.com
+
+7. Preserve existing Handlebars:
+   If input already contains valid Handlebars expressions, keep them exactly as-is
+
+IMPORTANT RULES:
+- Preserve exact spacing and punctuation from original text
+- Escape quotes inside strings with \\"
+- Keep exact capitalization of helper functions (String.Concat, String.Equal, Object.ToString)
+- Maintain proper nesting depth for conditionals
+- If text already has valid Handlebars syntax, DO NOT change it
 
 OUTPUT REQUIREMENTS:
 - Return ONLY the converted Handlebars expression
 - No explanations, no markdown, no extra text
-- Must be valid Handlebars syntax`;
+- Must be valid Handlebars syntax
+- Preserve any existing Handlebars expressions exactly`;
 }
 
 /**
